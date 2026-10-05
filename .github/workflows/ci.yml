@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'phase/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint server
+        run: npm run lint --workspace=server
+
+      - name: Run tests
+        run: npm run test --workspace=server
+        env:
+          NODE_ENV: test
+          DATABASE_URL: file::memory:?cache=shared
+          PUBLIC_BASE_URL: http://localhost:3000
