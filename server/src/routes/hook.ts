@@ -37,8 +37,8 @@ export function parseRequestBody(
 }
 
 export async function hookRoutes(app: FastifyInstance): Promise<void> {
-  // Capture all media types as raw Buffer for webhook inspection
-  app.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, payload, done) => {
+  // Capture all media types as raw Buffer for webhook inspection with 1 MB limit
+  app.addContentTypeParser('*', { parseAs: 'buffer', bodyLimit: 1048576 }, (_req, payload, done) => {
     done(null, payload);
   });
 
