@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
+import { endpointsRoutes } from './routes/endpoints.js';
 
 export function buildApp() {
   const isDev = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test';
@@ -19,6 +20,9 @@ export function buildApp() {
   });
 
   app.register(sensible);
+
+  // Routes
+  app.register(endpointsRoutes);
 
   // Health check
   app.get('/health', async (_req, _reply) => {
