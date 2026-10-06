@@ -8,6 +8,14 @@ Format: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## [Unreleased]
 
+### Phase 6 — Detail Request di UI
+
+- `feat(web): request detail tabs and curl copy` — panel detail dengan tab Body (JSON pretty-print monospace, raw text fallback, empty state), Headers (tabel key-value, hitungan badge, filter pencarian), dan Query (tabel query params); tombol salin cURL siap pakai dengan `generateCurl` (skip hop-by-hop headers, bash-escaped quotes); tombol salin body; rendering teks strictly safe tanpa HTML/XSS execution; scrolling internal pada boks body panjang.
+- `feat(web): filter and search for requests` — filter badge/pill metode HTTP (Semua, GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS); kolom input pencarian dengan debounce 250 ms untuk path, IP, dan isi body; filter realtime terintegrasi dengan event SSE; state kosong khusus jika pencarian/filter tidak menghasilkan kecocokan beserta tombol reset.
+- `feat(web): delete single request and confirm dialog for delete all` — tombol hapus individual untuk request yang dipilih; tombol "Hapus semua" dengan modal konfirmasi dialog aksesibel (`role="alertdialog"`, `aria-modal="true"`, focus trap, tombol Escape, pengembalian fokus ke elemen pemicu).
+- `fix(web): keyboard and aria improvements` — navigasi tab sesuai standar W3C ARIA Tablist (dukungan ArrowLeft, ArrowRight, Home, End dengan fokus otomatis); responsive layout adaptif (desktop 2-panel, mobile single-column dengan tombol navigasi kembali); audit Web Interface Guidelines (focus-visible ring, tabular-nums, `…` ellipsis).
+- `test(web): add unit tests for curl, detail, and escaping` — 16 unit test Vitest mencakup pembentukan cURL, escaping kutip tunggal, parsing header, formatting JSON pretty, XSS safety pada payload tag `<script>`, filter matching, dan keyboard tab cycling.
+
 ### Phase 5 — Frontend Dasar
 
 - `docs: add design direction` — `docs/DESIGN.md` memuat arah visual (IBM Plex Sans/Mono, palet token dark/light, badge method, layout dua panel, gerak, aksesibilitas).
