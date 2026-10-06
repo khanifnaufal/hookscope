@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import { endpointsRoutes } from './routes/endpoints.js';
 import { hookRoutes } from './routes/hook.js';
+import { requestsRoutes } from './routes/requests.js';
 
 export function buildApp() {
   const isDev = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test';
@@ -33,6 +34,7 @@ export function buildApp() {
       origin: process.env.NODE_ENV === 'production' ? false : true,
     });
     await apiApp.register(endpointsRoutes);
+    await apiApp.register(requestsRoutes);
   });
 
   // Webhook capture routes (public, raw HTTP methods including OPTIONS)
