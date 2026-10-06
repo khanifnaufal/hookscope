@@ -110,6 +110,19 @@ export async function hookRoutes(app: FastifyInstance): Promise<void> {
       ],
     });
 
+    // Enforce 500 requests cap per endpoint (FIFO: prune oldest)
+    await db.execute({
+      sql: `DELETE FROM requests
+            WHERE endpoint_id = ?
+              AND id NOT IN (
+                SELECT id FROM requests
+                WHERE endpoint_id = ?
+                ORDER BY received_at DESC, id DESC
+                LIMIT 500
+              )`,
+      args: [endpointId, endpointId],
+    });
+
     // Handle configured delay (max 10 seconds)
     const delayMs = Number(endpoint.response_delay_ms ?? 0);
     if (delayMs > 0) {
