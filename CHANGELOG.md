@@ -8,6 +8,15 @@ Format: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## [Unreleased]
 
+### Phase 5 — Frontend Dasar
+
+- `docs: add design direction` — `docs/DESIGN.md` memuat arah visual (IBM Plex Sans/Mono, palet token dark/light, badge method, layout dua panel, gerak, aksesibilitas).
+- `feat(web): design tokens and theme` — CSS variables lengkap untuk dark dan light mode; IBM Plex Sans/Mono menggantikan Inter/JetBrains; komponen `.card`, `.btn-primary`, `.btn-ghost`, `.btn-danger`, `.btn-icon`, `.input`, `.code-block`, `.method-badge`, `.live-dot`, `.flash-new`; toggle tema disimpan di `localStorage`; `prefers-reduced-motion` dihormati; focus ring `focus-visible` di semua elemen interaktif.
+- `feat(web): landing page` — halaman utama dengan tombol "Buat endpoint baru", peringatan endpoint publik, fitur highlights; UI Bahasa Indonesia; animasi loading spinner; pesan error inline.
+- `feat(web): dashboard layout` — header dengan URL + tombol salin + countdown kadaluarsa + `LiveIndicator`; dua panel grid (daftar kiri 320 px, detail kanan); hash-based routing `/#/<id>`; token dan endpoint disimpan di `localStorage`.
+- `feat(web): live request list` — `RequestRow` dengan badge method, path terpotong, waktu relatif, ukuran; `aria-live="polite"` pada daftar; flash highlight 800 ms saat request baru; SSE client dengan auto-reconnect dan `Last-Event-ID`; empty state dengan contoh curl siap salin; loading skeleton.
+- `fix(web): address design guideline findings` — ganti `div[role=button]` → `<button>`; ganti `focus:outline-none` → `focus-visible` ring; ellipsis karakter `…`; `text-wrap: balance` pada heading; `aria-label` pada semua ikon tombol.
+
 ### Phase 4 — Real-time SSE
 
 - `feat(sse): stream new requests` — implementasi `SseService` dan rute `GET /api/endpoints/:id/stream` untuk streaming request masuk secara real-time via Server-Sent Events; integrasi siaran broadcast dari handler webhook `hook.ts`; dukungan autentikasi token via header `Authorization: Bearer` maupun query parameter `?token=`.
