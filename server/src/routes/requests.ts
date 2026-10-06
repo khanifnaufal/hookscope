@@ -137,4 +137,55 @@ export async function requestsRoutes(app: FastifyInstance): Promise<void> {
       return reply.send(formatRequestRow(result.rows[0] as Record<string, unknown>));
     },
   );
+
+  /**
+   * DELETE /api/endpoints/:id/requests/:rid
+   * Delete a specific request.
+   * Requires Bearer token.
+   */
+  app.delete<{ Params: RequestParams }>(
+    '/api/endpoints/:id/requests/:rid',
+    { preHandler: requireManageToken },
+    async (req: FastifyRequest<{ Params: RequestParams }>, reply: FastifyReply) => {
+      const endpointId = req.params.id;
+      const requestId = parseInt(req.params.rid ?? '', 10);
+
+      if (Number.isNaN(requestId)) {
+        return reply.status(404).send({ error: 'Request not found' });
+      }
+
+      const db = getClient();
+      const result = await db.execute({
+        sql: 'DELETE FROM requests WHERE endpoint_id = ? AND id = ?',
+        args: [endpointId, requestId],
+      });
+
+      if (result.rowsAffected === 0) {
+        return reply.status(404).send({ error: 'Request not found' });
+      }
+
+      return reply.send({ ok: true, deleted: 1 });
+    },
+  );
+
+  /**
+   * DELETE /api/endpoints/:id/requests
+   * Delete all requests for an endpoint.
+   * Requires Bearer token.
+   */
+  app.delete<{ Params: RequestParams }>(
+    '/api/endpoints/:id/requests',
+    { preHandler: requireManageToken },
+    async (req: FastifyRequest<{ Params: RequestParams }>, reply: FastifyReply) => {
+      const endpointId = req.params.id;
+      const db = getClient();
+
+      const result = await db.execute({
+        sql: 'DELETE FROM requests WHERE endpoint_id = ?',
+        args: [endpointId],
+      });
+
+      return reply.send({ ok: true, count: Number(result.rowsAffected) });
+    },
+  );
 }

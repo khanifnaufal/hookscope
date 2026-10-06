@@ -71,4 +71,30 @@ export async function endpointsRoutes(app: FastifyInstance): Promise<void> {
       };
     },
   );
+
+  /**
+   * DELETE /api/endpoints/:id
+   * Delete endpoint and all associated requests. Requires Bearer token.
+   */
+  app.delete<{ Params: { id: string } }>(
+    '/api/endpoints/:id',
+    { preHandler: requireManageToken },
+    async (req, reply) => {
+      const db = getClient();
+      const endpointId = req.params.id;
+
+      // Clean up requests first, then endpoint
+      await db.execute({
+        sql: 'DELETE FROM requests WHERE endpoint_id = ?',
+        args: [endpointId],
+      });
+
+      await db.execute({
+        sql: 'DELETE FROM endpoints WHERE id = ?',
+        args: [endpointId],
+      });
+
+      return reply.send({ ok: true });
+    },
+  );
 }
