@@ -6,34 +6,45 @@ interface HookParams {
 }
 
 export function parseRequestBody(
-  buffer: Buffer | string | undefined | null,
+  body: unknown,
   contentType: string | undefined,
 ): { body: string | null; sizeBytes: number } {
-  if (buffer === undefined || buffer === null) {
+  if (body === undefined || body === null) {
     return { body: null, sizeBytes: 0 };
   }
 
-  const rawBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
-  if (rawBuffer.length === 0) {
-    return { body: null, sizeBytes: 0 };
+  if (Buffer.isBuffer(body)) {
+    if (body.length === 0) {
+      return { body: null, sizeBytes: 0 };
+    }
+    const sizeBytes = body.length;
+    const isBinaryType =
+      contentType &&
+      /^(image|audio|video|application\/octet-stream|application\/zip|application\/pdf|application\/gzip)/i.test(
+        contentType,
+      );
+
+    if (isBinaryType) {
+      return { body: body.toString('base64'), sizeBytes };
+    }
+
+    try {
+      return { body: body.toString('utf-8'), sizeBytes };
+    } catch {
+      return { body: body.toString('base64'), sizeBytes };
+    }
   }
 
-  const sizeBytes = rawBuffer.length;
-  const isBinaryType =
-    contentType &&
-    /^(image|audio|video|application\/octet-stream|application\/zip|application\/pdf|application\/gzip)/i.test(
-      contentType,
-    );
-
-  if (isBinaryType) {
-    return { body: rawBuffer.toString('base64'), sizeBytes };
+  if (typeof body === 'string') {
+    if (body.length === 0) {
+      return { body: null, sizeBytes: 0 };
+    }
+    return { body, sizeBytes: Buffer.byteLength(body, 'utf-8') };
   }
 
-  try {
-    return { body: rawBuffer.toString('utf-8'), sizeBytes };
-  } catch {
-    return { body: rawBuffer.toString('base64'), sizeBytes };
-  }
+  // If parsed as JSON object or other Javascript value
+  const serialized = JSON.stringify(body);
+  return { body: serialized, sizeBytes: Buffer.byteLength(serialized, 'utf-8') };
 }
 
 export async function hookRoutes(app: FastifyInstance): Promise<void> {

@@ -25,14 +25,17 @@ export function buildApp() {
   });
 
   // Register plugins
-  app.register(cors, {
-    origin: process.env.NODE_ENV === 'production' ? false : true,
-  });
-
   app.register(sensible);
 
-  // Routes
-  app.register(endpointsRoutes);
+  // Scoped API routes with CORS protection
+  app.register(async (apiApp) => {
+    await apiApp.register(cors, {
+      origin: process.env.NODE_ENV === 'production' ? false : true,
+    });
+    await apiApp.register(endpointsRoutes);
+  });
+
+  // Webhook capture routes (public, raw HTTP methods including OPTIONS)
   app.register(hookRoutes);
 
   // Health check
