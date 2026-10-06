@@ -177,6 +177,41 @@ class SseService {
   public getSubscriberCount(endpointId: string): number {
     return this.clients.get(endpointId)?.size ?? 0;
   }
+
+  /**
+   * Trigger immediate heartbeat to all clients for testing or maintenance.
+   */
+  public sendHeartbeatNow(endpointId?: string): void {
+    if (endpointId) {
+      const endpointClients = this.clients.get(endpointId);
+      if (endpointClients) {
+        for (const client of endpointClients) {
+          this.sendHeartbeat(client.response);
+        }
+      }
+    } else {
+      for (const clientSet of this.clients.values()) {
+        for (const client of clientSet) {
+          this.sendHeartbeat(client.response);
+        }
+      }
+    }
+  }
+
+  /**
+   * Clean up all active clients and clear intervals (teardown).
+   */
+  public clearAllClients(): void {
+    for (const clientSet of this.clients.values()) {
+      for (const client of clientSet) {
+        clearInterval(client.heartbeatTimer);
+        if (!client.response.writableEnded) {
+          client.response.end();
+        }
+      }
+    }
+    this.clients.clear();
+  }
 }
 
 export const sseService = new SseService();
