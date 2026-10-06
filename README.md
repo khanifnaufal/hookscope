@@ -73,12 +73,12 @@ Lihat [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) untuk detail lebih lanjut.
 | Fase | Status | Deskripsi |
 |------|--------|-----------|
 | 0 | ✅ | Setup monorepo, Fastify hello, Vite React, CI |
-| 1 | 🔜 | Database dan pembuatan endpoint |
-| 2 | 🔜 | Penangkap webhook |
-| 3 | 🔜 | API baca dan hapus request |
-| 4 | 🔜 | Real-time SSE |
-| 5 | 🔜 | Frontend dasar |
-| 6 | 🔜 | Detail request di UI |
+| 1 | ✅ | Database dan pembuatan endpoint |
+| 2 | ✅ | Penangkap webhook |
+| 3 | ✅ | API baca dan hapus request |
+| 4 | ✅ | Real-time SSE |
+| 5 | ✅ | Frontend dasar |
+| 6 | ✅ | Detail request di UI |
 | 7 | 🔜 | Custom response dan HMAC |
 | 8 | 🔜 | Hardening |
 | 9 | 🔜 | Replay dengan proteksi SSRF |

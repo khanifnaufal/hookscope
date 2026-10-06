@@ -45,3 +45,4 @@ coverage/
 AGENT_BRIEF.md
 .agents
 .claude
+skills-lock.json
