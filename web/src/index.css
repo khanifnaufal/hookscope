@@ -2,44 +2,215 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Design Tokens ===== */
 @layer base {
   :root {
-    --color-bg: #0a0b0f;
-    --color-surface: #12141a;
-    --color-surface-2: #1a1d26;
-    --color-border: #ffffff12;
-    --color-accent: #6c63ff;
-    --color-accent-light: #8b83ff;
+    /* Dark mode (default) */
+    --bg: #0c0e14;
+    --surface: #13151f;
+    --surface-2: #1a1d2b;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e4e6f0;
+    --text-muted: #7a7f96;
+    --accent: #4f7dff;
+    --accent-dim: rgba(79, 125, 255, 0.15);
+    --success: #3ecf8e;
+    --warning: #f0b429;
+    --danger: #f75a5a;
+
+    /* Method badge colors */
+    --method-get: #3ecf8e;
+    --method-post: #4f7dff;
+    --method-put: #f0b429;
+    --method-patch: #a78bfa;
+    --method-delete: #f75a5a;
+    --method-head: #7a7f96;
+    --method-options: #7a7f96;
+  }
+
+  .light {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --surface-2: #eef0f7;
+    --border: rgba(0, 0, 0, 0.09);
+    --text: #1a1d2b;
+    --text-muted: #6b7080;
+    --accent: #2d63e8;
+    --accent-dim: rgba(45, 99, 232, 0.12);
+    --success: #1e9a6a;
+    --warning: #c47d0e;
+    --danger: #d43939;
+
+    /* Method badge colors stay consistent in light mode for badge bg */
+    --method-get: #1a7a52;
+    --method-post: #1d4fc9;
+    --method-put: #8a5700;
+    --method-patch: #6b33e3;
+    --method-delete: #b82c2c;
+    --method-head: #4a5068;
+    --method-options: #4a5068;
   }
 
   html {
-    @apply antialiased;
-    background-color: var(--color-bg);
-    color: #e2e8f0;
+    background-color: var(--bg);
+    color: var(--text);
+    @apply antialiased font-sans;
+    transition: background-color 200ms ease, color 200ms ease;
   }
 
   body {
-    @apply font-sans;
     min-height: 100vh;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Focus visible ring — consistent across themes */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Scrollbar styling (webkit) */
   * {
-    @apply border-white/10;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
+  .light * {
+    scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
   }
 }
 
+/* ===== Component Styles ===== */
 @layer components {
-  .glass-card {
-    @apply rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm;
+  /* Card/Panel */
+  .card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    @apply rounded-xl;
   }
 
+  /* Buttons */
   .btn-primary {
-    @apply rounded-lg bg-violet-600 px-4 py-2 font-medium text-white transition-all
-      hover:bg-violet-500 active:scale-95 disabled:opacity-50;
+    background-color: var(--accent);
+    color: #fff;
+    @apply rounded-lg px-4 py-2 text-sm font-medium
+      transition-all duration-150
+      hover:opacity-90
+      active:scale-[0.97]
+      disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply rounded-lg border border-white/10 px-4 py-2 font-medium text-slate-300
-      transition-all hover:border-white/20 hover:bg-white/5 active:scale-95;
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    @apply rounded-lg px-4 py-2 text-sm font-medium
+      transition-all duration-150
+      hover:border-white/20 hover:text-[var(--text)]
+      active:scale-[0.97]
+      disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .light .btn-ghost {
+    @apply hover:border-black/20;
+  }
+
+  .btn-danger {
+    background-color: var(--danger);
+    color: #fff;
+    @apply rounded-lg px-4 py-2 text-sm font-medium
+      transition-all duration-150
+      hover:opacity-90
+      active:scale-[0.97]
+      disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-icon {
+    background-color: transparent;
+    color: var(--text-muted);
+    @apply rounded-lg p-2 transition-colors duration-150
+      hover:bg-white/5 hover:text-[var(--text)]
+      active:scale-[0.97];
+  }
+
+  .light .btn-icon {
+    @apply hover:bg-black/5;
+  }
+
+  /* Method badge */
+  .method-badge {
+    @apply inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wide;
+  }
+
+  /* Input */
+  .input {
+    background-color: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    @apply w-full rounded-lg px-3 py-2 text-sm
+      transition-[border-color] duration-150
+      placeholder:text-[var(--text-muted)];
+  }
+  .input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+    border-color: var(--accent);
+  }
+
+  /* Code / monospace block */
+  .code-block {
+    background-color: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    @apply font-mono text-xs rounded-lg p-4 overflow-auto;
+  }
+
+  /* Flash animation on new request entry */
+  .flash-new {
+    animation: flash-new 0.8s ease-out;
+  }
+
+  @keyframes flash-new {
+    0% {
+      background-color: var(--accent-dim);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  /* Live indicator dot */
+  .live-dot {
+    @apply inline-block w-2 h-2 rounded-full bg-[var(--success)];
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  .live-dot.disconnected {
+    @apply bg-[var(--warning)];
+    animation: none;
+  }
+
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-dot {
+      animation: none;
+    }
   }
 }
