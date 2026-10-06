@@ -8,6 +8,13 @@ Format: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## [Unreleased]
 
+### Phase 3 — API Baca dan Hapus Request
+
+- `feat(api): list and detail requests` — rute `GET /api/endpoints/:id/requests` (pagination dengan `limit` & `offset`, filter `method`, search pada body/path/query, parsing query & headers ke JSON object) dan `GET /api/endpoints/:id/requests/:rid` (detail satu request, 404 jika tidak ditemukan).
+- `feat(api): delete requests` — rute `DELETE /api/endpoints/:id/requests/:rid` (hapus satu request), `DELETE /api/endpoints/:id/requests` (hapus semua request pada endpoint), dan `DELETE /api/endpoints/:id` (hapus endpoint beserta seluruh request terkait).
+- `feat: cap 500 requests per endpoint` — penerapan batas FIFO maksimal 500 request per endpoint pada saat webhook baru masuk dengan membuang request yang paling lama.
+- `test: request management and fifo cap` — 11 test kasus Vitest untuk list requests, pagination, filter method, text search, detail request, delete single/all, cascade delete endpoint, dan verifikasi limit 500 FIFO pruning.
+
 ### Phase 2 — Penangkap Webhook
 
 - `feat(hook): capture all http methods` — handler `ALL /hook/:id` dan `/hook/:id/*` untuk GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; simpan method, path, query, headers, body, content-type, IP, size_bytes, dan received_at ke database; cek keberadaan dan masa aktif endpoint (return 404 jika tidak ada atau expired); dukung custom status, body, content-type, dan delay.
