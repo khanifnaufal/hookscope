@@ -59,17 +59,6 @@ Lihat [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) untuk detail lebih lanjut.
 
 ---
 
-## 🚢 Deploy Gratis
-
-> Dokumentasi deploy akan ditambahkan di Fase 10.
-
-Stack deploy yang digunakan:
-- **Backend**: [Render](https://render.com) free web service
-- **Database**: [Turso](https://turso.tech) free tier
-
-> ⚠️ **Catatan cold start**: Free tier Render akan tidur setelah idle. Request pertama setelah idle mungkin lambat ~30 detik. Ini normal, bukan bug.
-
----
 
 ## 🛡️ Keamanan
 

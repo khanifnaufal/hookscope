@@ -41,3 +41,7 @@ coverage/
 
 # Misc
 .cache/
+
+AGENT_BRIEF.md
+.agents
+.claude

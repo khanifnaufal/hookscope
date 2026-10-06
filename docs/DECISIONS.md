@@ -27,3 +27,20 @@ Setiap keputusan arsitektur atau teknis yang non-trivial dicatat di sini.
 **Keputusan**: Gunakan Server-Sent Events (SSE). Browser reconnect otomatis dan mendukung `Last-Event-ID` untuk resume.
 
 **Konsekuensi**: Komunikasi hanya satu arah (server → client). Cukup untuk use case ini karena browser tidak perlu mengirim data via stream.
+
+---
+
+## [DECISION-003] Vitest forks pool dan ESLint setup di workspace web
+
+**Tanggal**: 2026-10-06  
+**Status**: Accepted
+
+**Konteks**: 
+1. Saat menjalankan Vitest di Windows dengan `@libsql/client` (native addon), thread worker default vitest mengalami access violation (exit code 3221225477) saat proses selesai.
+2. Workspace `web` belum memiliki `.eslintrc.cjs` sehingga `npm run lint --workspace=web` gagal.
+
+**Keputusan**: 
+1. Gunakan `pool: 'forks'` di `server/vitest.config.ts` untuk isolasi proses yang aman bagi native SQLite binary di Windows.
+2. Tambahkan `web/.eslintrc.cjs` dengan konfigurasi typescript dan react-hooks.
+
+**Konsekuensi**: CI dan lokal test serta lint berjalan hijau dan stabil di lingkungan Windows maupun Linux.

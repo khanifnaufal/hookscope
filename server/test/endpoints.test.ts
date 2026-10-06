@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buildApp } from '../src/app.js';
-import { migrate } from '../src/db/client.js';
+import { migrate, closeClient } from '../src/db/client.js';
 
 // Use in-memory SQLite for tests
 process.env.DATABASE_URL = ':memory:';
@@ -16,6 +16,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await app.close();
+  closeClient();
 });
 
 describe('POST /api/endpoints', () => {

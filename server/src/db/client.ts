@@ -16,6 +16,13 @@ export function getClient(): Client {
   return _client;
 }
 
+export function closeClient(): void {
+  if (_client) {
+    _client.close();
+    _client = null;
+  }
+}
+
 /**
  * Run schema.sql migration on startup.
  * Uses IF NOT EXISTS so it is safe to call on every boot.

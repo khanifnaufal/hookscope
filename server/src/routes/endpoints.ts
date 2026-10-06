@@ -1,11 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { nanoid } from 'nanoid';
-import { z } from 'zod';
 import { getClient } from '../db/client.js';
 import { config } from '../config.js';
 import { requireManageToken } from '../services/auth.js';
-
-const CreateEndpointSchema = z.object({}).passthrough(); // body is optional / ignored
 
 export async function endpointsRoutes(app: FastifyInstance): Promise<void> {
   /**
