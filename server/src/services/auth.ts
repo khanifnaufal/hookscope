@@ -6,11 +6,14 @@ import { getClient } from '../db/client.js';
  * Returns the manage_token row on success, throws 401 otherwise.
  */
 export async function requireManageToken(
-  req: FastifyRequest<{ Params: { id: string } }>,
+  req: FastifyRequest<{ Params: { id: string }; Querystring?: { token?: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
   const authHeader = req.headers.authorization ?? '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const queryToken = (req.query as { token?: string } | undefined)?.token;
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : (queryToken && queryToken.trim().length > 0 ? queryToken.trim() : null);
 
   if (!token) {
     return reply.status(401).send({ error: 'Missing authorization token' });

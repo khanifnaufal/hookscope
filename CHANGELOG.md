@@ -8,6 +8,12 @@ Format: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## [Unreleased]
 
+### Phase 4 — Real-time SSE
+
+- `feat(sse): stream new requests` — implementasi `SseService` dan rute `GET /api/endpoints/:id/stream` untuk streaming request masuk secara real-time via Server-Sent Events; integrasi siaran broadcast dari handler webhook `hook.ts`; dukungan autentikasi token via header `Authorization: Bearer` maupun query parameter `?token=`.
+- `feat(sse): heartbeat and resume support` — heartbeat berkala 15 detik (`: ping\n\n`), header `X-Accel-Buffering: no` untuk mencegah buffering proxy/nginx, dan pemutaran ulang request yang terlewat (`Last-Event-ID` header atau `?last_event_id=`) saat koneksi reconnect.
+- `test: sse stream and reconnection` — 7 test suite Vitest mencakup autentikasi token (header dan query), validasi header SSE, live push event saat webhook baru masuk, heartbeat comment, dan pemutaran ulang missed requests dengan `Last-Event-ID`.
+
 ### Phase 3 — API Baca dan Hapus Request
 
 - `feat(api): list and detail requests` — rute `GET /api/endpoints/:id/requests` (pagination dengan `limit` & `offset`, filter `method`, search pada body/path/query, parsing query & headers ke JSON object) dan `GET /api/endpoints/:id/requests/:rid` (detail satu request, 404 jika tidak ditemukan).

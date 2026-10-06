@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getClient } from '../db/client.js';
+import { sseService } from '../services/sse.js';
 
 interface HookParams {
   id: string;
@@ -92,7 +93,7 @@ export async function hookRoutes(app: FastifyInstance): Promise<void> {
     const receivedAt = now.toISOString();
 
     // Insert captured request into database
-    await db.execute({
+    const insertResult = await db.execute({
       sql: `INSERT INTO requests (
               endpoint_id, method, path, query, headers, body, content_type, ip, size_bytes, signature_valid, received_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
@@ -108,6 +109,24 @@ export async function hookRoutes(app: FastifyInstance): Promise<void> {
         sizeBytes,
         receivedAt,
       ],
+    });
+
+    const requestId = Number(insertResult.lastInsertRowid);
+
+    // Broadcast new request to all active SSE subscribers
+    sseService.broadcast(endpointId, {
+      id: requestId,
+      endpoint_id: endpointId,
+      method: req.method.toUpperCase(),
+      path,
+      query,
+      headers,
+      body,
+      content_type: contentType ?? null,
+      ip,
+      size_bytes: sizeBytes,
+      signature_valid: null,
+      received_at: receivedAt,
     });
 
     // Enforce 500 requests cap per endpoint (FIFO: prune oldest)
