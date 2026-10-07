@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getClient } from '../db/client.js';
 import { sseService } from '../services/sse.js';
 import { verifyWebhookSignature } from '../services/hmac.js';
+import { hookLimiter } from '../services/rateLimit.js';
 
 interface HookParams {
   id: string;
@@ -82,11 +83,32 @@ export async function hookRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(404).send({ error: 'Endpoint expired' });
     }
 
+    // Rate limit: 60 requests/minute per endpoint
+    if (!hookLimiter.isAllowed(endpointId)) {
+      return reply
+        .status(429)
+        .header('Retry-After', '60')
+        .header('X-RateLimit-Limit', '60')
+        .header('X-RateLimit-Remaining', '0')
+        .send({ error: 'Rate limit exceeded', message: 'Max 60 requests per minute per endpoint' });
+    }
+
+    const remaining = hookLimiter.remaining(endpointId);
+    reply
+      .header('X-RateLimit-Limit', '60')
+      .header('X-RateLimit-Remaining', String(remaining));
+
     const contentType = req.headers['content-type'];
     const { body, sizeBytes } = parseRequestBody(req.body as Buffer | undefined, contentType);
     const path = req.url.split('?')[0];
     const query = JSON.stringify(req.query ?? {});
-    const headers = JSON.stringify(req.headers ?? {});
+    // Normalise duplicate header values (arrays) to comma-joined strings
+    const normalisedHeaders: Record<string, string> = {};
+    for (const [k, v] of Object.entries(req.headers)) {
+      if (v === undefined) continue;
+      normalisedHeaders[k] = Array.isArray(v) ? v.join(', ') : v;
+    }
+    const headers = JSON.stringify(normalisedHeaders);
     const ip =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       req.ip ||

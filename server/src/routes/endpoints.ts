@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getClient } from '../db/client.js';
 import { config } from '../config.js';
 import { requireManageToken } from '../services/auth.js';
+import { createLimiter } from '../services/rateLimit.js';
 
 const updateEndpointSchema = z.object({
   response_status: z
@@ -39,7 +40,25 @@ export async function endpointsRoutes(app: FastifyInstance): Promise<void> {
    * POST /api/endpoints
    * Create a new endpoint with a random ID and manage token.
    */
-  app.post('/api/endpoints', async (_req, reply) => {
+  app.post('/api/endpoints', async (req, reply) => {
+    // Rate limit: 10 endpoint creations per hour per IP
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.ip ||
+      'unknown';
+
+    if (!createLimiter.isAllowed(clientIp)) {
+      return reply
+        .status(429)
+        .header('Retry-After', '3600')
+        .header('X-RateLimit-Limit', '10')
+        .header('X-RateLimit-Remaining', '0')
+        .send({
+          error: 'Rate limit exceeded',
+          message: 'Max 10 endpoint creations per hour per IP',
+        });
+    }
+
     const db = getClient();
     const id = nanoid(12);
     const manageToken = nanoid(32);
