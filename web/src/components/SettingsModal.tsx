@@ -105,12 +105,14 @@ export function SettingsModal({
     return () => {
       clearTimeout(timeout);
       window.removeEventListener('keydown', handleKeyDown);
-      triggerRef.current?.focus();
+      setTimeout(() => {
+        triggerRef.current?.focus();
+      }, 0);
     };
   }, [isOpen, onClose]);
 
   // Form validation
-  const validate = useCallback(() => {
+  const validate = useCallback((): Record<string, string> => {
     const errs: Record<string, string> = {};
 
     const statusNum = parseInt(responseStatus, 10);
@@ -142,7 +144,7 @@ export function SettingsModal({
     }
 
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    return errs;
   }, [
     responseStatus,
     responseContentType,
@@ -157,13 +159,12 @@ export function SettingsModal({
     e.preventDefault();
     setGeneralError(null);
 
-    if (!validate()) {
-      // Focus first error field
-      const firstErrorKey = Object.keys(errors)[0];
-      if (firstErrorKey) {
-        const el = modalRef.current?.querySelector(`[name="${firstErrorKey}"]`) as HTMLElement | null;
-        el?.focus();
-      }
+    const validationErrors = validate();
+    const errorKeys = Object.keys(validationErrors);
+    if (errorKeys.length > 0) {
+      const firstErrorKey = errorKeys[0];
+      const el = modalRef.current?.querySelector(`[name="${firstErrorKey}"]`) as HTMLElement | null;
+      el?.focus();
       return;
     }
 
@@ -298,13 +299,15 @@ export function SettingsModal({
                   value={responseStatus}
                   onChange={(e) => setResponseStatus(e.target.value)}
                   disabled={isSubmitting}
+                  aria-invalid={Boolean(errors.responseStatus)}
+                  aria-describedby={errors.responseStatus ? 'error-response-status' : undefined}
                   className="input-text w-full font-mono text-xs tabular-nums"
                   autoComplete="off"
                   spellCheck={false}
                   required
                 />
                 {errors.responseStatus && (
-                  <p className="mt-1 text-[11px] text-rose-500" role="alert">
+                  <p id="error-response-status" className="mt-1 text-[11px] text-rose-500" role="alert">
                     {errors.responseStatus}
                   </p>
                 )}
@@ -329,16 +332,18 @@ export function SettingsModal({
                   value={responseDelayMs}
                   onChange={(e) => setResponseDelayMs(e.target.value)}
                   disabled={isSubmitting}
+                  aria-invalid={Boolean(errors.responseDelayMs)}
+                  aria-describedby={errors.responseDelayMs ? 'error-response-delay' : 'hint-response-delay'}
                   className="input-text w-full font-mono text-xs tabular-nums"
                   autoComplete="off"
                   spellCheck={false}
                 />
                 {errors.responseDelayMs && (
-                  <p className="mt-1 text-[11px] text-rose-500" role="alert">
+                  <p id="error-response-delay" className="mt-1 text-[11px] text-rose-500" role="alert">
                     {errors.responseDelayMs}
                   </p>
                 )}
-                <span className="block mt-0.5 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                <span id="hint-response-delay" className="block mt-0.5 text-[10px]" style={{ color: 'var(--text-muted)' }}>
                   Maksimal 10.000&nbsp;ms (10&nbsp;detik)
                 </span>
               </div>
@@ -360,6 +365,8 @@ export function SettingsModal({
                 value={responseContentType}
                 onChange={(e) => setResponseContentType(e.target.value)}
                 disabled={isSubmitting}
+                aria-invalid={Boolean(errors.responseContentType)}
+                aria-describedby={errors.responseContentType ? 'error-response-content-type' : undefined}
                 className="input-text w-full font-mono text-xs"
                 placeholder="application/json…"
                 autoComplete="off"
@@ -367,7 +374,7 @@ export function SettingsModal({
                 required
               />
               {errors.responseContentType && (
-                <p className="mt-1 text-[11px] text-rose-500" role="alert">
+                <p id="error-response-content-type" className="mt-1 text-[11px] text-rose-500" role="alert">
                   {errors.responseContentType}
                 </p>
               )}
@@ -389,13 +396,15 @@ export function SettingsModal({
                 value={responseBody}
                 onChange={(e) => setResponseBody(e.target.value)}
                 disabled={isSubmitting}
+                aria-invalid={Boolean(errors.responseBody)}
+                aria-describedby={errors.responseBody ? 'error-response-body' : undefined}
                 className="input-text w-full font-mono text-xs resize-y"
                 placeholder='{"ok":true}…'
                 autoComplete="off"
                 spellCheck={false}
               />
               {errors.responseBody && (
-                <p className="mt-1 text-[11px] text-rose-500" role="alert">
+                <p id="error-response-body" className="mt-1 text-[11px] text-rose-500" role="alert">
                   {errors.responseBody}
                 </p>
               )}
@@ -443,13 +452,15 @@ export function SettingsModal({
                   value={hmacHeader}
                   onChange={(e) => setHmacHeader(e.target.value)}
                   disabled={isSubmitting}
+                  aria-invalid={Boolean(errors.hmacHeader)}
+                  aria-describedby={errors.hmacHeader ? 'error-hmac-header' : undefined}
                   className="input-text w-full font-mono text-xs"
                   placeholder="X-Hub-Signature-256…"
                   autoComplete="off"
                   spellCheck={false}
                 />
                 {errors.hmacHeader && (
-                  <p className="mt-1 text-[11px] text-rose-500" role="alert">
+                  <p id="error-hmac-header" className="mt-1 text-[11px] text-rose-500" role="alert">
                     {errors.hmacHeader}
                   </p>
                 )}
@@ -501,6 +512,8 @@ export function SettingsModal({
                   value={hmacSecret}
                   onChange={(e) => setHmacSecret(e.target.value)}
                   disabled={isSubmitting}
+                  aria-invalid={Boolean(errors.hmacSecret)}
+                  aria-describedby={errors.hmacSecret ? 'error-hmac-secret' : undefined}
                   className="input-text w-full pl-8 pr-9 font-mono text-xs"
                   placeholder={
                     isSecretMaskedSaved
@@ -528,7 +541,7 @@ export function SettingsModal({
               )}
 
               {errors.hmacSecret && (
-                <p className="mt-1 text-[11px] text-rose-500" role="alert">
+                <p id="error-hmac-secret" className="mt-1 text-[11px] text-rose-500" role="alert">
                   {errors.hmacSecret}
                 </p>
               )}
