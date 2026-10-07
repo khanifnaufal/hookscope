@@ -147,6 +147,38 @@ export async function deleteAllRequests(endpointId: string): Promise<void> {
   if (!res.ok) throw new Error(`Gagal menghapus semua request: ${res.status}`);
 }
 
+export interface ReplayResult {
+  ok: boolean;
+  status: number;
+  status_text: string;
+  headers: Record<string, string>;
+  body: string;
+  target_url: string;
+}
+
+export async function replayRequest(
+  endpointId: string,
+  requestId: number,
+  targetUrl: string,
+): Promise<ReplayResult> {
+  const res = await fetch(`${BASE}/api/endpoints/${endpointId}/requests/${requestId}/replay`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(endpointId),
+    },
+    body: JSON.stringify({ target_url: targetUrl }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const errorMsg = data.message || data.error || `Replay gagal (${res.status})`;
+    throw new Error(errorMsg);
+  }
+
+  return data as ReplayResult;
+}
+
 export async function deleteEndpoint(endpointId: string): Promise<void> {
   const res = await fetch(`${BASE}/api/endpoints/${endpointId}`, {
     method: 'DELETE',
@@ -155,3 +187,4 @@ export async function deleteEndpoint(endpointId: string): Promise<void> {
   if (!res.ok) throw new Error(`Gagal menghapus endpoint: ${res.status}`);
   localStorage.removeItem(`hookscope-token-${endpointId}`);
 }
+

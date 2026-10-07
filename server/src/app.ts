@@ -5,6 +5,7 @@ import { endpointsRoutes } from './routes/endpoints.js';
 import { hookRoutes } from './routes/hook.js';
 import { requestsRoutes } from './routes/requests.js';
 import { streamRoutes } from './routes/stream.js';
+import { replayRoutes } from './routes/replay.js';
 
 export function buildApp() {
   const isTest = process.env.NODE_ENV === 'test';
@@ -67,6 +68,7 @@ export function buildApp() {
     await apiApp.register(endpointsRoutes);
     await apiApp.register(requestsRoutes);
     await apiApp.register(streamRoutes);
+    await apiApp.register(replayRoutes);
   });
 
   // ── Webhook capture — no CORS (public, all origins by design) ─────────────

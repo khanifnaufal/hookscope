@@ -8,6 +8,26 @@ Format: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## [Unreleased]
 
+### Phase 9 — Replay dengan Proteksi SSRF
+
+- `feat: ssrf protection service` — layanan `ssrf.ts` untuk memvalidasi `target_url` sebelum request outbound dikirimkan:
+  - Hanya protokol `http:` dan `https:` yang diizinkan (menolak `ftp:`, `file:`, `gopher:`, dll).
+  - DNS resolution dilakukan secara asinkron (`node:dns/promises`) untuk semua rekaman IPv4 dan IPv6.
+  - Memblokir loopback (`127.0.0.0/8`, `::1`), private LAN RFC 1918 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local / AWS metadata (`169.254.0.0/16`, `fe80::/10`), unique local (`fc00::/7`), dan alamat `0.0.0.0/8`.
+- `feat: replay route` — endpoint `POST /api/endpoints/:id/requests/:rid/replay` (dilindungi Bearer token):
+  - Mengambil data request webhook asli yang tersimpan di basis data.
+  - Memvalidasi `target_url` dengan proteksi SSRF sebelum request keluar.
+  - Membawa method HTTP asli, query, body mentah, dan header aman (membuang hop-by-hop headers seperti `host`, `connection`, `transfer-encoding` dan menambahkan `x-replayed-by: hookscope`).
+  - Menjalankan fetch dengan timeout 5 detik (`AbortController`).
+  - Melakukan penanganan redirect secara manual (`redirect: 'manual'`, batas 5 hop) dengan validasi SSRF ulang pada setiap header `Location` untuk mencegah redirect-based SSRF.
+  - Membatasi pembacaan ukuran response maksimal 1 MB untuk mencegah exhaustion memory.
+  - Mengembalikan response target lengkap (status code, status text, response headers, response body, target URL akhir).
+- `feat(web): replay modal component` — antarmuka modal Replay di panel detail request (`RequestDetail.tsx` & `ReplayModal.tsx`):
+  - Tombol Replay di samping Copy cURL pada detail header.
+  - Form input target URL dengan placeholder, validasi tipe URL, dan panduan keamanan SSRF.
+  - Feedback visual eksekusi: status badge (misal `200 OK` hijau atau `502 Bad Gateway` merah), tabs untuk beralih antara Response Body dan Headers, tombol Salin Response, dan peringatan error jika URL ditolak oleh filter SSRF.
+- `test: ssrf and replay test suite` — 16 unit dan integration tests baru di `replay.test.ts` memvalidasi parsing rentang IP publik vs terlarang, validasi hostname/skema URL, penolakan token 401, penolakan 404 request tidak ditemukan, penolakan 422 untuk loopback dan AWS metadata instance (`169.254.169.254`).
+
 ### Phase 8 — Hardening
 
 - `feat: ttl cleanup job` — layanan `cleanup.ts` yang berjalan setiap 10 menit untuk menghapus endpoint kedaluwarsa beserta seluruh request-nya (via `ON DELETE CASCADE`); job dimulai otomatis saat server boot dan menggunakan `timer.unref()` agar tidak mencegah proses berhenti; dapat dihentikan dengan `stopCleanupJob()` (berguna di test).

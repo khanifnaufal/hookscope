@@ -15,11 +15,13 @@ import {
   XCircle,
   MinusCircle,
   Info,
+  RotateCw,
 } from 'lucide-react';
 import type { RequestItem } from '../lib/api';
 import { generateCurl, parseHeaders } from '../lib/curl';
 import { CopyButton } from './CopyButton';
 import { MethodBadge } from './MethodBadge';
+import { ReplayModal } from './ReplayModal';
 import { formatBytes, formatRelative } from '../lib/format';
 
 interface RequestDetailProps {
@@ -49,6 +51,7 @@ export function RequestDetail({
 }: RequestDetailProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('body');
   const [headerFilter, setHeaderFilter] = useState('');
+  const [isReplayOpen, setIsReplayOpen] = useState(false);
   const tabRefs = useRef<Map<TabKey, HTMLButtonElement>>(new Map());
 
   // Parse headers safely
@@ -266,8 +269,18 @@ export function RequestDetail({
             </div>
           </div>
 
-          {/* Action buttons: Copy cURL and Delete */}
+          {/* Action buttons: Replay, Copy cURL, and Delete */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="btn-ghost inline-flex items-center gap-1.5 text-xs text-[var(--accent)] hover:opacity-80"
+              onClick={() => setIsReplayOpen(true)}
+              aria-label="Replay request ke URL target"
+            >
+              <RotateCw size={13} aria-hidden="true" />
+              <span>Replay</span>
+            </button>
+
             <CopyButton
               text={curlCommand}
               label="Salin cURL"
@@ -746,6 +759,13 @@ export function RequestDetail({
           </div>
         </div>
         )}
+
+        {/* Replay Modal */}
+        <ReplayModal
+          request={request}
+          isOpen={isReplayOpen}
+          onClose={() => setIsReplayOpen(false)}
+        />
       </div>
     </div>
   );
