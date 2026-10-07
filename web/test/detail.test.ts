@@ -161,7 +161,7 @@ describe('Filter and search matching logic', () => {
 });
 
 describe('ARIA Tab Keyboard Navigation helper logic', () => {
-  const tabs = ['body', 'headers', 'query'] as const;
+  const tabs = ['body', 'headers', 'query', 'signature'] as const;
 
   function getNextTab(currentKey: typeof tabs[number], key: string): typeof tabs[number] {
     const currentIndex = tabs.indexOf(currentKey);
@@ -183,17 +183,172 @@ describe('ARIA Tab Keyboard Navigation helper logic', () => {
   it('cycles forward on ArrowRight and wraps around', () => {
     expect(getNextTab('body', 'ArrowRight')).toBe('headers');
     expect(getNextTab('headers', 'ArrowRight')).toBe('query');
-    expect(getNextTab('query', 'ArrowRight')).toBe('body');
+    expect(getNextTab('query', 'ArrowRight')).toBe('signature');
+    expect(getNextTab('signature', 'ArrowRight')).toBe('body');
   });
 
   it('cycles backward on ArrowLeft and wraps around', () => {
-    expect(getNextTab('body', 'ArrowLeft')).toBe('query');
+    expect(getNextTab('body', 'ArrowLeft')).toBe('signature');
+    expect(getNextTab('signature', 'ArrowLeft')).toBe('query');
     expect(getNextTab('query', 'ArrowLeft')).toBe('headers');
     expect(getNextTab('headers', 'ArrowLeft')).toBe('body');
   });
 
   it('jumps to first tab on Home and last tab on End', () => {
     expect(getNextTab('headers', 'Home')).toBe('body');
-    expect(getNextTab('headers', 'End')).toBe('query');
+    expect(getNextTab('headers', 'End')).toBe('signature');
+  });
+});
+
+describe('Signature status interpretation', () => {
+  function getSignatureStatus(signature_valid: boolean | null) {
+    if (signature_valid === true) {
+      return { status: 'valid', label: 'Signature Valid', badge: 'Valid' };
+    }
+    if (signature_valid === false) {
+      return { status: 'invalid', label: 'Signature Tidak Valid', badge: 'Invalid' };
+    }
+    return { status: 'none', label: 'Tidak Ada Signature', badge: undefined };
+  }
+
+  it('correctly maps signature_valid = true to Valid', () => {
+    const res = getSignatureStatus(true);
+    expect(res.status).toBe('valid');
+    expect(res.label).toBe('Signature Valid');
+    expect(res.badge).toBe('Valid');
+  });
+
+  it('correctly maps signature_valid = false to Invalid', () => {
+    const res = getSignatureStatus(false);
+    expect(res.status).toBe('invalid');
+    expect(res.label).toBe('Signature Tidak Valid');
+    expect(res.badge).toBe('Invalid');
+  });
+
+  it('correctly maps signature_valid = null to "Tidak Ada Signature" (not invalid)', () => {
+    const res = getSignatureStatus(null);
+    expect(res.status).toBe('none');
+    expect(res.label).toBe('Tidak Ada Signature');
+    expect(res.badge).toBeUndefined();
+  });
+});
+
+describe('Settings form validation logic', () => {
+  function validateSettings(input: {
+    responseStatus: string;
+    responseContentType: string;
+    responseDelayMs: string;
+    responseBody: string;
+    hmacHeader: string;
+    hmacSecret: string;
+    isSecretMaskedSaved: boolean;
+  }) {
+    const errs: Record<string, string> = {};
+
+    const statusNum = parseInt(input.responseStatus, 10);
+    if (Number.isNaN(statusNum) || statusNum < 100 || statusNum > 599) {
+      errs.responseStatus = 'Status code HTTP harus antara 100 dan 599';
+    }
+
+    if (!input.responseContentType.trim()) {
+      errs.responseContentType = 'Content-Type tidak boleh kosong';
+    }
+
+    const delayNum = parseInt(input.responseDelayMs, 10);
+    if (Number.isNaN(delayNum) || delayNum < 0 || delayNum > 10000) {
+      errs.responseDelayMs = 'Delay harus antara 0 dan 10.000 ms (maksimal 10 detik)';
+    }
+
+    if (input.responseContentType.includes('json') && input.responseBody.trim()) {
+      try {
+        JSON.parse(input.responseBody);
+      } catch {
+        errs.responseBody = 'Format JSON tidak valid';
+      }
+    }
+
+    if (input.hmacHeader.trim() && !input.hmacSecret.trim() && !input.isSecretMaskedSaved) {
+      errs.hmacSecret = 'Secret wajib diisi jika header signature ditentukan';
+    }
+
+    return errs;
+  }
+
+  it('validates correct custom response settings without errors', () => {
+    const errs = validateSettings({
+      responseStatus: '200',
+      responseContentType: 'application/json',
+      responseDelayMs: '500',
+      responseBody: '{"success":true}',
+      hmacHeader: '',
+      hmacSecret: '',
+      isSecretMaskedSaved: false,
+    });
+    expect(Object.keys(errs).length).toBe(0);
+  });
+
+  it('catches invalid status codes', () => {
+    const errs = validateSettings({
+      responseStatus: '99',
+      responseContentType: 'application/json',
+      responseDelayMs: '0',
+      responseBody: '{}',
+      hmacHeader: '',
+      hmacSecret: '',
+      isSecretMaskedSaved: false,
+    });
+    expect(errs.responseStatus).toBeDefined();
+  });
+
+  it('catches invalid delay > 10000', () => {
+    const errs = validateSettings({
+      responseStatus: '200',
+      responseContentType: 'application/json',
+      responseDelayMs: '12000',
+      responseBody: '{}',
+      hmacHeader: '',
+      hmacSecret: '',
+      isSecretMaskedSaved: false,
+    });
+    expect(errs.responseDelayMs).toBeDefined();
+  });
+
+  it('catches invalid JSON body when content-type is json', () => {
+    const errs = validateSettings({
+      responseStatus: '200',
+      responseContentType: 'application/json',
+      responseDelayMs: '0',
+      responseBody: '{invalid json',
+      hmacHeader: '',
+      hmacSecret: '',
+      isSecretMaskedSaved: false,
+    });
+    expect(errs.responseBody).toBeDefined();
+  });
+
+  it('requires secret if hmac header is set and no masked secret was saved', () => {
+    const errs = validateSettings({
+      responseStatus: '200',
+      responseContentType: 'application/json',
+      responseDelayMs: '0',
+      responseBody: '{}',
+      hmacHeader: 'X-Signature',
+      hmacSecret: '',
+      isSecretMaskedSaved: false,
+    });
+    expect(errs.hmacSecret).toBeDefined();
+  });
+
+  it('allows empty secret if masked secret was already saved on server', () => {
+    const errs = validateSettings({
+      responseStatus: '200',
+      responseContentType: 'application/json',
+      responseDelayMs: '0',
+      responseBody: '{}',
+      hmacHeader: 'X-Signature',
+      hmacSecret: '',
+      isSecretMaskedSaved: true,
+    });
+    expect(errs.hmacSecret).toBeUndefined();
   });
 });

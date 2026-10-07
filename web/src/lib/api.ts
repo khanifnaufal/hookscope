@@ -73,6 +73,47 @@ export async function getEndpoint(id: string): Promise<EndpointInfo> {
   return res.json() as Promise<EndpointInfo>;
 }
 
+export interface UpdateEndpointInput {
+  response_status?: number;
+  response_body?: string;
+  response_content_type?: string;
+  response_delay_ms?: number;
+  hmac_secret?: string | null;
+  hmac_algo?: 'sha256' | 'sha1' | null;
+  hmac_header?: string | null;
+}
+
+export async function updateEndpoint(
+  endpointId: string,
+  data: UpdateEndpointInput,
+): Promise<EndpointInfo> {
+  const res = await fetch(`${BASE}/api/endpoints/${endpointId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(endpointId),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    let errorMsg = `Gagal menyimpan pengaturan: ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson.details && Array.isArray(errJson.details)) {
+        errorMsg = errJson.details.map((d: { message: string }) => d.message).join(', ');
+      } else if (errJson.error) {
+        errorMsg = errJson.error;
+      }
+    } catch {
+      // fallback
+    }
+    throw new Error(errorMsg);
+  }
+
+  return res.json() as Promise<EndpointInfo>;
+}
+
 export async function listRequests(
   id: string,
   params: { limit?: number; offset?: number; method?: string; search?: string } = {},

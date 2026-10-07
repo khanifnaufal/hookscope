@@ -79,7 +79,7 @@ Lihat [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) untuk detail lebih lanjut.
 | 4 | ✅ | Real-time SSE |
 | 5 | ✅ | Frontend dasar |
 | 6 | ✅ | Detail request di UI |
-| 7 | 🔜 | Custom response dan HMAC |
+| 7 | ✅ | Custom response dan HMAC |
 | 8 | 🔜 | Hardening |
 | 9 | 🔜 | Replay dengan proteksi SSRF |
 | 10 | 🔜 | Test, deploy, dokumentasi |

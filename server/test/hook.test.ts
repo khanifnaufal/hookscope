@@ -249,4 +249,92 @@ describe('Webhook capture (ALL /hook/:id)', () => {
     expect(res.body).toBe('<response>accepted</response>');
     expect(elapsed).toBeGreaterThanOrEqual(40);
   });
+
+  describe('HMAC verification during hook capture', () => {
+    const hmacId = nanoid(12);
+    const secret = 'whsec_test_secret_123';
+    const future = new Date(Date.now() + 1000 * 60 * 60).toISOString();
+
+    beforeAll(async () => {
+      const db = getClient();
+      await db.execute({
+        sql: `INSERT INTO endpoints (
+                id, manage_token, hmac_secret, hmac_algo, hmac_header, created_at, expires_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          hmacId,
+          'token_hmac',
+          secret,
+          'sha256',
+          'X-Signature-256',
+          future,
+          future,
+        ],
+      });
+    });
+
+    it('sets signature_valid to null when signature header is missing ("tidak ada signature")', async () => {
+      const payload = JSON.stringify({ message: 'no signature sent' });
+      await app.inject({
+        method: 'POST',
+        url: `/hook/${hmacId}`,
+        headers: { 'content-type': 'application/json' },
+        payload,
+      });
+
+      const db = getClient();
+      const res = await db.execute({
+        sql: 'SELECT signature_valid FROM requests WHERE endpoint_id = ? ORDER BY id DESC LIMIT 1',
+        args: [hmacId],
+      });
+
+      expect(res.rows[0].signature_valid).toBeNull();
+    });
+
+    it('sets signature_valid to 1 when valid HMAC signature is sent', async () => {
+      const crypto = await import('node:crypto');
+      const payload = JSON.stringify({ message: 'valid signature' });
+      const hash = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+
+      await app.inject({
+        method: 'POST',
+        url: `/hook/${hmacId}`,
+        headers: {
+          'content-type': 'application/json',
+          'x-signature-256': `sha256=${hash}`,
+        },
+        payload,
+      });
+
+      const db = getClient();
+      const res = await db.execute({
+        sql: 'SELECT signature_valid FROM requests WHERE endpoint_id = ? ORDER BY id DESC LIMIT 1',
+        args: [hmacId],
+      });
+
+      expect(res.rows[0].signature_valid).toBe(1);
+    });
+
+    it('sets signature_valid to 0 when invalid HMAC signature is sent', async () => {
+      const payload = JSON.stringify({ message: 'tampered signature' });
+
+      await app.inject({
+        method: 'POST',
+        url: `/hook/${hmacId}`,
+        headers: {
+          'content-type': 'application/json',
+          'x-signature-256': 'sha256=wrongsignaturevalue000000000',
+        },
+        payload,
+      });
+
+      const db = getClient();
+      const res = await db.execute({
+        sql: 'SELECT signature_valid FROM requests WHERE endpoint_id = ? ORDER BY id DESC LIMIT 1',
+        args: [hmacId],
+      });
+
+      expect(res.rows[0].signature_valid).toBe(0);
+    });
+  });
 });
