@@ -8,6 +8,15 @@ Format: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## [Unreleased]
 
+### Phase 8 — Hardening
+
+- `feat: ttl cleanup job` — layanan `cleanup.ts` yang berjalan setiap 10 menit untuk menghapus endpoint kedaluwarsa beserta seluruh request-nya (via `ON DELETE CASCADE`); job dimulai otomatis saat server boot dan menggunakan `timer.unref()` agar tidak mencegah proses berhenti; dapat dihentikan dengan `stopCleanupJob()` (berguna di test).
+- `feat: rate limiting` — `SlidingWindowRateLimiter` berbasis in-memory sliding-window: (1) **60 request/menit per endpoint ID** pada `/hook/:id` — melebihi batas mengembalikan `429` dengan header `Retry-After: 60`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`; (2) **10 pembuatan endpoint/jam per IP klien** pada `POST /api/endpoints` — melebihi batas mengembalikan `429` dengan header `Retry-After: 3600`; setiap request yang berhasil menyertakan header `X-RateLimit-Remaining` sisa.
+- `feat: structured JSON logging in production` — Fastify logger dikonfigurasi ulang: mode dev tetap memakai `pino-pretty` berwarna; mode production menghasilkan log JSON terstruktur dengan serializer request/response standar; mode test logging dimatikan sepenuhnya (`false`) agar output test bersih.
+- `feat: CORS restricted to ALLOWED_ORIGINS` — rute `/api/*` membaca variabel `ALLOWED_ORIGINS` (comma-separated), jika tidak diset memperbolehkan semua origin (cocok untuk dev lokal); rute `/hook/:id` sengaja tidak diberi CORS karena bersifat publik dan menerima request dari semua sumber; `.env.example` diperbarui dengan dokumentasi variabel baru.
+- `feat: normalise duplicate headers` — nilai header duplikat (array, misal dua `Cookie`) digabung menjadi satu string dengan `, ` sebelum disimpan ke DB, sehingga JSON header selalu merupakan `Record<string, string>`.
+- `test: edge cases` — 16 test baru di `hardening.test.ts` mencakup: TTL cleanup (hapus expired/cascade/pertahankan yang valid), unit test `SlidingWindowRateLimiter` (allow/block/remaining/key isolation), integrasi HTTP 429 pada hook dan endpoint creation, body kosong (GET), body biner (PNG disimpan base64), header duplikat ternormalisasi, body besar ≤1 MB diterima, body >1 MB dikembalikan 413.
+
 ### Phase 7 — Custom Response dan HMAC
 
 - `feat(api): custom response config` — rute `PATCH /api/endpoints/:id` dilindungi Bearer token untuk mengubah pengaturan respons otomatis (`response_status` 100–599, `response_body` hingga 100 KB, `response_content_type`, `response_delay_ms` hingga 10.000 ms) dan konfigurasi verifikasi HMAC (`hmac_secret`, `hmac_algo`, `hmac_header`); validasi skema ketat menggunakan Zod; HMAC secret tetap di-mask (`***`) pada respons.
