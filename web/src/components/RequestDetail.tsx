@@ -358,12 +358,12 @@ export function RequestDetail({
       {/* ─── Tab Panels ─── */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {/* TAB PANEL: BODY */}
+        {activeTab === 'body' && (
         <div
           role="tabpanel"
           id="panel-body"
           aria-labelledby="tab-body"
           tabIndex={0}
-          hidden={activeTab !== 'body'}
           className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
           <div className="w-full max-w-5xl mx-auto flex flex-1 flex-col min-h-0 overflow-hidden">
@@ -411,14 +411,15 @@ export function RequestDetail({
             )}
           </div>
         </div>
+        )}
 
         {/* TAB PANEL: HEADERS */}
+        {activeTab === 'headers' && (
         <div
           role="tabpanel"
           id="panel-headers"
           aria-labelledby="tab-headers"
           tabIndex={0}
-          hidden={activeTab !== 'headers'}
           className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
           <div className="w-full max-w-5xl mx-auto flex flex-1 flex-col min-h-0 overflow-hidden">
@@ -518,14 +519,15 @@ export function RequestDetail({
             )}
           </div>
         </div>
+        )}
 
         {/* TAB PANEL: QUERY */}
+        {activeTab === 'query' && (
         <div
           role="tabpanel"
           id="panel-query"
           aria-labelledby="tab-query"
           tabIndex={0}
-          hidden={activeTab !== 'query'}
           className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
           <div className="w-full max-w-5xl mx-auto flex flex-1 flex-col min-h-0 overflow-hidden">
@@ -610,14 +612,15 @@ export function RequestDetail({
             )}
           </div>
         </div>
+        )}
 
         {/* TAB PANEL: SIGNATURE */}
+        {activeTab === 'signature' && (
         <div
           role="tabpanel"
           id="panel-signature"
           aria-labelledby="tab-signature"
           tabIndex={0}
-          hidden={activeTab !== 'signature'}
           className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
           <div className="w-full max-w-5xl mx-auto space-y-6">
@@ -742,8 +745,10 @@ export function RequestDetail({
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
 }
+
 
