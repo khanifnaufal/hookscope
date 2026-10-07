@@ -8,6 +8,14 @@ Format: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## [Unreleased]
 
+### Phase 7 — Custom Response dan HMAC
+
+- `feat(api): custom response config` — rute `PATCH /api/endpoints/:id` dilindungi Bearer token untuk mengubah pengaturan respons otomatis (`response_status` 100–599, `response_body` hingga 100 KB, `response_content_type`, `response_delay_ms` hingga 10.000 ms) dan konfigurasi verifikasi HMAC (`hmac_secret`, `hmac_algo`, `hmac_header`); validasi skema ketat menggunakan Zod; HMAC secret tetap di-mask (`***`) pada respons.
+- `feat(hmac): verify signatures` — layanan `verifyWebhookSignature` dengan perbandingan konstan waktu (`crypto.timingSafeEqual`) untuk mencegah serangan timing/side-channel; dukungan hash SHA-256 dan SHA-1; penanganan otomatis prefix format signature (`sha256=`, `sha1=`), raw hex (case-insensitive), dan base64; integrasi penuh pada penangkap webhook `/hook/:id` dengan penyimpanan status verifikasi ke basis data dan siaran real-time SSE (`signature_valid`: `true`, `false`, atau `null` jika tidak ada header signature).
+- `feat(web): settings modal and signature tab` — modal Pengaturan endpoint dengan form kustom response dan form konfigurasi HMAC; tab "Signature" pada panel detail request dengan kartu status bertenaga ikon + teks (Valid, Tidak Valid, Tidak Ada Signature), tabel header signature yang terdeteksi, nilai mentah signature dengan tombol salin, dan panduan teknis verifikasi; tombol buka pengaturan pada header dashboard.
+- `fix(web): modal accessibility` — dialog modal aksesibel penuh (`role="dialog"`, `aria-modal="true"`, `aria-labelledby`, `aria-describedby`); focus trap dengan keyboard Tab / Shift+Tab; penutupan dialog dengan tombol Escape dan klik backdrop; pemulihan fokus otomatis ke elemen pemicu saat dialog tertutup; validasi form inline dengan `aria-invalid` dan `aria-describedby` ke pesan error; tombol aksi dengan spinner loading `"Menyimpan…"`.
+- `test: custom response, hmac, and settings validation` — unit test Vitest komprehensif mencakup operasi PATCH endpoint, penolakan input invalid (400), penolakan tanpa token (401), perbandingan timing-safe, verifikasi signature SHA-256/SHA-1/prefix/raw/base64, pemetaan status signature UI, dan validasi form pengaturan.
+
 ### Phase 6 — Detail Request di UI
 
 - `feat(web): request detail tabs and curl copy` — panel detail dengan tab Body (JSON pretty-print monospace, raw text fallback, empty state), Headers (tabel key-value, hitungan badge, filter pencarian), dan Query (tabel query params); tombol salin cURL siap pakai dengan `generateCurl` (skip hop-by-hop headers, bash-escaped quotes); tombol salin body; rendering teks strictly safe tanpa HTML/XSS execution; scrolling internal pada boks body panjang.
