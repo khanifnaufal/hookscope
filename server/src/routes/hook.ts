@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getClient } from '../db/client.js';
 import { sseService } from '../services/sse.js';
+import { verifyWebhookSignature } from '../services/hmac.js';
 
 interface HookParams {
   id: string;
@@ -63,7 +64,8 @@ export async function hookRoutes(app: FastifyInstance): Promise<void> {
 
     // Check if endpoint exists and is not expired
     const endpointResult = await db.execute({
-      sql: `SELECT id, response_status, response_body, response_content_type, response_delay_ms, expires_at
+      sql: `SELECT id, response_status, response_body, response_content_type, response_delay_ms,
+                   hmac_secret, hmac_algo, hmac_header, expires_at
             FROM endpoints WHERE id = ?`,
       args: [endpointId],
     });
@@ -92,11 +94,20 @@ export async function hookRoutes(app: FastifyInstance): Promise<void> {
       '';
     const receivedAt = now.toISOString();
 
+    // Verify HMAC signature if configured
+    const hmacConfig = {
+      secret: (endpoint.hmac_secret as string | null) ?? null,
+      algo: (endpoint.hmac_algo as string | null) ?? null,
+      header: (endpoint.hmac_header as string | null) ?? null,
+    };
+    const rawBuffer = Buffer.isBuffer(req.body) ? (req.body as Buffer) : null;
+    const signatureValid = verifyWebhookSignature(rawBuffer ?? body, req.headers, hmacConfig);
+
     // Insert captured request into database
     const insertResult = await db.execute({
       sql: `INSERT INTO requests (
               endpoint_id, method, path, query, headers, body, content_type, ip, size_bytes, signature_valid, received_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         endpointId,
         req.method.toUpperCase(),
@@ -107,11 +118,14 @@ export async function hookRoutes(app: FastifyInstance): Promise<void> {
         contentType ?? null,
         ip,
         sizeBytes,
+        signatureValid,
         receivedAt,
       ],
     });
 
     const requestId = Number(insertResult.lastInsertRowid);
+    const signatureBool =
+      signatureValid === 1 ? true : signatureValid === 0 ? false : null;
 
     // Broadcast new request to all active SSE subscribers
     sseService.broadcast(endpointId, {
@@ -125,7 +139,7 @@ export async function hookRoutes(app: FastifyInstance): Promise<void> {
       content_type: contentType ?? null,
       ip,
       size_bytes: sizeBytes,
-      signature_valid: null,
+      signature_valid: signatureBool,
       received_at: receivedAt,
     });
 
