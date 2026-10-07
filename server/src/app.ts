@@ -7,42 +7,72 @@ import { requestsRoutes } from './routes/requests.js';
 import { streamRoutes } from './routes/stream.js';
 
 export function buildApp() {
-  const isDev = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test';
+  const isTest = process.env.NODE_ENV === 'test';
+  const isDev = !isTest && process.env.NODE_ENV !== 'production';
 
   const app = Fastify({
     bodyLimit: 1048576, // 1 MB limit
-    logger: {
-      level: process.env.NODE_ENV === 'test' ? 'silent' : 'info',
-      // Only load pino-pretty in dev mode — not available in test/vitest environment
-      transport: isDev ? { target: 'pino-pretty', options: { colorize: true } } : undefined,
-    },
+    logger: isTest
+      ? false
+      : {
+          level: isDev ? 'debug' : 'info',
+          // Structured JSON logging in production; pretty in dev
+          transport: isDev
+            ? { target: 'pino-pretty', options: { colorize: true } }
+            : undefined,
+          // Production: emit JSON with standard fields
+          serializers: isDev
+            ? undefined
+            : {
+                req(req) {
+                  return {
+                    method: req.method,
+                    url: req.url,
+                    remoteAddress: req.socket?.remoteAddress,
+                  };
+                },
+                res(res) {
+                  return { statusCode: res.statusCode };
+                },
+              },
+        },
   });
 
-  // Handle 413 Payload Too Large explicitly
+  // ── Error handler ──────────────────────────────────────────────────────────
   app.setErrorHandler((error, _request, reply) => {
     if (error.statusCode === 413 || error.code === 'FST_ERR_CTP_BODY_TOO_LARGE') {
-      return reply.status(413).send({ error: 'Payload Too Large', message: 'Body exceeds 1 MB limit' });
+      return reply
+        .status(413)
+        .send({ error: 'Payload Too Large', message: 'Body exceeds 1 MB limit' });
     }
     return reply.send(error);
   });
 
-  // Register plugins
+  // ── Global plugins ─────────────────────────────────────────────────────────
   app.register(sensible);
 
-  // Scoped API routes with CORS protection
+  // ── Scoped API routes — CORS restricted to known origins ──────────────────
   app.register(async (apiApp) => {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+      : true; // allow all in dev / when not set
+
     await apiApp.register(cors, {
-      origin: process.env.NODE_ENV === 'production' ? false : true,
+      origin: allowedOrigins,
+      methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
     });
+
     await apiApp.register(endpointsRoutes);
     await apiApp.register(requestsRoutes);
     await apiApp.register(streamRoutes);
   });
 
-  // Webhook capture routes (public, raw HTTP methods including OPTIONS)
+  // ── Webhook capture — no CORS (public, all origins by design) ─────────────
   app.register(hookRoutes);
 
-  // Health check
+  // ── Health check ───────────────────────────────────────────────────────────
   app.get('/health', async (_req, _reply) => {
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
