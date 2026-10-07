@@ -1,6 +1,10 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
+import fastifyStatic from '@fastify/static';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { endpointsRoutes } from './routes/endpoints.js';
 import { hookRoutes } from './routes/hook.js';
 import { requestsRoutes } from './routes/requests.js';
@@ -78,6 +82,28 @@ export function buildApp() {
   app.get('/health', async (_req, _reply) => {
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
+
+  // ── Serve frontend static build if web/dist exists ─────────────────────────
+  const possibleDistPaths = [
+    path.resolve(process.cwd(), 'web/dist'),
+    path.resolve(process.cwd(), '../web/dist'),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../web/dist'),
+  ];
+  const webDistPath = possibleDistPaths.find((p) => fs.existsSync(p));
+
+  if (webDistPath) {
+    app.register(fastifyStatic, {
+      root: webDistPath,
+      wildcard: false,
+    });
+
+    app.setNotFoundHandler((req, reply) => {
+      if (req.url.startsWith('/api') || req.url.startsWith('/hook')) {
+        return reply.status(404).send({ error: 'Not Found' });
+      }
+      return reply.sendFile('index.html');
+    });
+  }
 
   return app;
 }
