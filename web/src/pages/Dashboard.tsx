@@ -471,7 +471,7 @@ export default function Dashboard({
 
         {/* Right Panel: Request Detail */}
         <main
-          className={`min-w-0 flex-1 overflow-hidden ${
+          className={`min-w-0 flex-1 overflow-hidden flex flex-col ${
             selectedId === null ? 'hidden md:flex' : 'flex'
           }`}
         >

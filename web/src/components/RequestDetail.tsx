@@ -205,15 +205,16 @@ export function RequestDetail({
   const curlCommand = useMemo(() => generateCurl(request, hookUrl), [request, hookUrl]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden" data-testid="request-detail">
+    <div className="flex h-full w-full flex-1 flex-col overflow-hidden" data-testid="request-detail">
       {/* ─── Detail Header ─── */}
       <div
         className="flex-shrink-0 border-b p-4 sm:p-6"
         style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
       >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
-            {onBackToList && (
+        <div className="w-full max-w-5xl mx-auto">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              {onBackToList && (
               <button
                 type="button"
                 onClick={onBackToList}
@@ -351,6 +352,7 @@ export function RequestDetail({
             );
           })}
         </div>
+        </div>
       </div>
 
       {/* ─── Tab Panels ─── */}
@@ -364,48 +366,50 @@ export function RequestDetail({
           hidden={activeTab !== 'body'}
           className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
-          {bodyInfo.isEmpty ? (
-            <div
-              className="flex h-48 items-center justify-center rounded-lg border border-dashed"
-              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
-            >
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Tidak ada request body (kosong)
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  <span className="font-mono text-[11px] uppercase tracking-wider font-semibold">
-                    {bodyInfo.isJson ? 'JSON (Pretty-printed)' : 'Raw Text'}
-                  </span>
-                  <span>&middot;</span>
-                  <span className="font-mono tabular-nums">{formatBytes(request.size_bytes)}</span>
-                </div>
-                {bodyInfo.text && (
-                  <CopyButton text={bodyInfo.text} label="Salin body" />
-                )}
-              </div>
-
-              {/* Scrollable body box - scrolls inside itself, not the entire page */}
+          <div className="w-full max-w-5xl mx-auto flex flex-1 flex-col min-h-0 overflow-hidden">
+            {bodyInfo.isEmpty ? (
               <div
-                className="flex-1 min-h-0 overflow-auto rounded-lg border p-4"
-                style={{
-                  backgroundColor: 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                }}
+                className="flex h-48 items-center justify-center rounded-lg border border-dashed"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
               >
-                <pre
-                  className="font-mono text-xs leading-relaxed break-words whitespace-pre-wrap select-text"
-                  style={{ color: 'var(--text)' }}
-                >
-                  {/* Strict plain text rendering: React safely escapes this without evaluation */}
-                  {bodyInfo.text}
-                </pre>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Tidak ada request body (kosong)
+                </p>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span className="font-mono text-[11px] uppercase tracking-wider font-semibold">
+                      {bodyInfo.isJson ? 'JSON (Pretty-printed)' : 'Raw Text'}
+                    </span>
+                    <span>&middot;</span>
+                    <span className="font-mono tabular-nums">{formatBytes(request.size_bytes)}</span>
+                  </div>
+                  {bodyInfo.text && (
+                    <CopyButton text={bodyInfo.text} label="Salin body" />
+                  )}
+                </div>
+
+                {/* Scrollable body box - scrolls inside itself, not the entire page */}
+                <div
+                  className="flex-1 min-h-0 overflow-auto rounded-lg border p-4"
+                  style={{
+                    backgroundColor: 'var(--surface-2)',
+                    borderColor: 'var(--border)',
+                  }}
+                >
+                  <pre
+                    className="font-mono text-xs leading-relaxed break-words whitespace-pre-wrap select-text"
+                    style={{ color: 'var(--text)' }}
+                  >
+                    {/* Strict plain text rendering: React safely escapes this without evaluation */}
+                    {bodyInfo.text}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* TAB PANEL: HEADERS */}
@@ -417,50 +421,144 @@ export function RequestDetail({
           hidden={activeTab !== 'headers'}
           className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
-          {headerEntries.length === 0 ? (
-            <div
-              className="flex h-48 items-center justify-center rounded-lg border border-dashed"
-              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
-            >
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Tidak ada HTTP headers
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
-              {/* Header search filter & copy all */}
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <input
-                  type="search"
-                  value={headerFilter}
-                  onChange={(e) => setHeaderFilter(e.target.value)}
-                  placeholder="Filter headers…"
-                  aria-label="Filter HTTP headers"
-                  spellCheck={false}
-                  autoComplete="off"
-                  className="input-text text-xs max-w-xs"
-                />
-
-                <CopyButton
-                  text={headerEntries.map(([k, v]) => `${k}: ${v}`).join('\n')}
-                  label="Salin semua"
-                  aria-label="Salin semua HTTP header"
-                />
-              </div>
-
-              {/* Scrollable headers table */}
+          <div className="w-full max-w-5xl mx-auto flex flex-1 flex-col min-h-0 overflow-hidden">
+            {headerEntries.length === 0 ? (
               <div
-                className="flex-1 min-h-0 overflow-auto rounded-lg border"
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  borderColor: 'var(--border)',
-                }}
+                className="flex h-48 items-center justify-center rounded-lg border border-dashed"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
               >
-                {filteredHeaders.length === 0 ? (
-                  <div className="p-4 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Tidak ada header yang cocok dengan &ldquo;{headerFilter}&rdquo;
-                  </div>
-                ) : (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Tidak ada HTTP headers
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+                {/* Header search filter & copy all */}
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <input
+                    type="search"
+                    value={headerFilter}
+                    onChange={(e) => setHeaderFilter(e.target.value)}
+                    placeholder="Filter headers…"
+                    aria-label="Filter HTTP headers"
+                    spellCheck={false}
+                    autoComplete="off"
+                    className="input-text text-xs max-w-xs"
+                  />
+
+                  <CopyButton
+                    text={headerEntries.map(([k, v]) => `${k}: ${v}`).join('\n')}
+                    label="Salin semua"
+                    aria-label="Salin semua HTTP header"
+                  />
+                </div>
+
+                {/* Scrollable headers table */}
+                <div
+                  className="flex-1 min-h-0 overflow-auto rounded-lg border"
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    borderColor: 'var(--border)',
+                  }}
+                >
+                  {filteredHeaders.length === 0 ? (
+                    <div className="p-4 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+                      Tidak ada header yang cocok dengan &ldquo;{headerFilter}&rdquo;
+                    </div>
+                  ) : (
+                    <table className="w-full border-collapse text-left font-mono text-xs">
+                      <thead>
+                        <tr
+                          className="border-b"
+                          style={{
+                            borderColor: 'var(--border)',
+                            backgroundColor: 'var(--surface-2)',
+                          }}
+                        >
+                          <th className="px-4 py-2 font-medium text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                            Header
+                          </th>
+                          <th className="px-4 py-2 font-medium text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                            Value
+                          </th>
+                          <th className="w-16 px-2 py-2" aria-label="Aksi"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                        {filteredHeaders.map(([key, value]) => (
+                          <tr
+                            key={key}
+                            className="hover:bg-[var(--surface-2)] transition-colors group"
+                          >
+                            <td
+                              className="px-4 py-2 font-medium align-top whitespace-nowrap"
+                              style={{ color: 'var(--accent)' }}
+                            >
+                              {key}
+                            </td>
+                            <td
+                              className="px-4 py-2 align-top break-all"
+                              style={{ color: 'var(--text)' }}
+                            >
+                              {/* Strictly safe text rendering */}
+                              {value}
+                            </td>
+                            <td className="px-2 py-2 align-top text-right">
+                              <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <CopyButton text={value} label="Salin" />
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* TAB PANEL: QUERY */}
+        <div
+          role="tabpanel"
+          id="panel-query"
+          aria-labelledby="tab-query"
+          tabIndex={0}
+          hidden={activeTab !== 'query'}
+          className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        >
+          <div className="w-full max-w-5xl mx-auto flex flex-1 flex-col min-h-0 overflow-hidden">
+            {queryEntries.length === 0 ? (
+              <div
+                className="flex h-48 items-center justify-center rounded-lg border border-dashed"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
+              >
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Tidak ada parameter query URL
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {queryEntries.length} parameter
+                  </span>
+                  <CopyButton
+                    text={queryEntries.map(([k, v]) => `${k}=${v}`).join('&')}
+                    label="Salin query"
+                    aria-label="Salin semua query parameters"
+                  />
+                </div>
+
+                {/* Scrollable query table */}
+                <div
+                  className="flex-1 min-h-0 overflow-auto rounded-lg border"
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    borderColor: 'var(--border)',
+                  }}
+                >
                   <table className="w-full border-collapse text-left font-mono text-xs">
                     <thead>
                       <tr
@@ -471,7 +569,7 @@ export function RequestDetail({
                         }}
                       >
                         <th className="px-4 py-2 font-medium text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                          Header
+                          Key
                         </th>
                         <th className="px-4 py-2 font-medium text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                           Value
@@ -480,7 +578,7 @@ export function RequestDetail({
                       </tr>
                     </thead>
                     <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                      {filteredHeaders.map(([key, value]) => (
+                      {queryEntries.map(([key, value]) => (
                         <tr
                           key={key}
                           className="hover:bg-[var(--surface-2)] transition-colors group"
@@ -507,100 +605,10 @@ export function RequestDetail({
                       ))}
                     </tbody>
                   </table>
-                )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* TAB PANEL: QUERY */}
-        <div
-          role="tabpanel"
-          id="panel-query"
-          aria-labelledby="tab-query"
-          tabIndex={0}
-          hidden={activeTab !== 'query'}
-          className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-        >
-          {queryEntries.length === 0 ? (
-            <div
-              className="flex h-48 items-center justify-center rounded-lg border border-dashed"
-              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
-            >
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Tidak ada parameter query URL
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {queryEntries.length} parameter
-                </span>
-                <CopyButton
-                  text={queryEntries.map(([k, v]) => `${k}=${v}`).join('&')}
-                  label="Salin query"
-                  aria-label="Salin semua query parameters"
-                />
-              </div>
-
-              {/* Scrollable query table */}
-              <div
-                className="flex-1 min-h-0 overflow-auto rounded-lg border"
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  borderColor: 'var(--border)',
-                }}
-              >
-                <table className="w-full border-collapse text-left font-mono text-xs">
-                  <thead>
-                    <tr
-                      className="border-b"
-                      style={{
-                        borderColor: 'var(--border)',
-                        backgroundColor: 'var(--surface-2)',
-                      }}
-                    >
-                      <th className="px-4 py-2 font-medium text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                        Key
-                      </th>
-                      <th className="px-4 py-2 font-medium text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                        Value
-                      </th>
-                      <th className="w-16 px-2 py-2" aria-label="Aksi"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                    {queryEntries.map(([key, value]) => (
-                      <tr
-                        key={key}
-                        className="hover:bg-[var(--surface-2)] transition-colors group"
-                      >
-                        <td
-                          className="px-4 py-2 font-medium align-top whitespace-nowrap"
-                          style={{ color: 'var(--accent)' }}
-                        >
-                          {key}
-                        </td>
-                        <td
-                          className="px-4 py-2 align-top break-all"
-                          style={{ color: 'var(--text)' }}
-                        >
-                          {/* Strictly safe text rendering */}
-                          {value}
-                        </td>
-                        <td className="px-2 py-2 align-top text-right">
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <CopyButton text={value} label="Salin" />
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* TAB PANEL: SIGNATURE */}
@@ -612,7 +620,7 @@ export function RequestDetail({
           hidden={activeTab !== 'signature'}
           className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
-          <div className="max-w-2xl space-y-6">
+          <div className="w-full max-w-5xl mx-auto space-y-6">
             {/* Status Card (Always has icon + text, never color alone) */}
             <div
               className="rounded-xl border p-4 sm:p-5 flex items-start gap-3.5"
@@ -738,3 +746,4 @@ export function RequestDetail({
     </div>
   );
 }
+

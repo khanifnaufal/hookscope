@@ -211,7 +211,7 @@ export function SettingsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSubmitting) onClose();
       }}
@@ -223,18 +223,18 @@ export function SettingsModal({
         aria-modal="true"
         aria-labelledby="settings-dialog-title"
         aria-describedby="settings-dialog-desc"
-        className="w-full max-w-lg rounded-xl border p-6 shadow-2xl my-8 animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-lg max-h-[calc(100vh-2rem)] sm:max-h-[88vh] rounded-xl border shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         style={{
           backgroundColor: 'var(--surface)',
           borderColor: 'var(--border)',
           color: 'var(--text)',
         }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--border)' }}>
+        {/* Header - Fixed */}
+        <div className="flex flex-shrink-0 items-center justify-between border-b px-5 py-3.5 sm:px-6 sm:py-4" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-2.5">
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-lg"
+              className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
               style={{ backgroundColor: 'var(--accent-dim)', color: 'var(--accent)' }}
               aria-hidden="true"
             >
@@ -261,28 +261,29 @@ export function SettingsModal({
           </button>
         </div>
 
-        {generalError && (
-          <div
-            className="mt-4 rounded-lg p-3 text-xs"
-            style={{ backgroundColor: 'rgba(247, 90, 90, 0.12)', color: 'var(--danger)' }}
-            role="alert"
-          >
-            {generalError}
-          </div>
-        )}
+        {/* Form Body - Scrollable */}
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5 space-y-5">
+            {generalError && (
+              <div
+                className="rounded-lg p-3 text-xs"
+                style={{ backgroundColor: 'rgba(247, 90, 90, 0.12)', color: 'var(--danger)' }}
+                role="alert"
+              >
+                {generalError}
+              </div>
+            )}
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="mt-4 space-y-6">
-          {/* ─── SECTION 1: CUSTOM RESPONSE ─── */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-              <span>Respon Kustom Webhook</span>
-            </div>
+            {/* ─── SECTION 1: CUSTOM RESPONSE ─── */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                <span>Respon Kustom Webhook</span>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Status Code */}
-              <div>
-                <label
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Status Code */}
+                <div>
+                  <label
                   htmlFor="field-response-status"
                   className="block text-xs font-medium mb-1"
                   style={{ color: 'var(--text)' }}
@@ -409,10 +410,10 @@ export function SettingsModal({
                 </p>
               )}
             </div>
-          </div>
+            </div>
 
-          {/* ─── SECTION 2: HMAC VERIFICATION ─── */}
-          <div className="space-y-4 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+            {/* ─── SECTION 2: HMAC VERIFICATION ─── */}
+            <div className="space-y-4 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                 <ShieldCheck size={14} aria-hidden="true" />
@@ -546,32 +547,36 @@ export function SettingsModal({
                 </p>
               )}
             </div>
+            </div>
           </div>
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
-            <button
-              type="button"
-              className="btn-ghost text-xs"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn-primary text-xs inline-flex items-center gap-1.5"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 size={13} className="animate-spin" aria-hidden="true" />
-                  <span>Menyimpan…</span>
-                </>
-              ) : (
-                <span>Simpan Pengaturan</span>
-              )}
-            </button>
+          {/* Footer Actions - Fixed at Bottom */}
+          <div
+            className="flex flex-shrink-0 items-center justify-end gap-3 border-t px-5 py-3.5 sm:px-6 sm:py-4"
+            style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
+          >
+          <button
+            type="button"
+            className="btn-ghost text-xs"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-primary text-xs inline-flex items-center gap-1.5"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                <span>Menyimpan…</span>
+              </>
+            ) : (
+              <span>Simpan Pengaturan</span>
+            )}
+          </button>
           </div>
         </form>
       </div>
