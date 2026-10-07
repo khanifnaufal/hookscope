@@ -6,7 +6,13 @@ Format: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ---
 
-## [Unreleased]
+## [1.0.0] - 2026-10-07
+
+### Phase 10 — Test, Deploy, Dokumentasi & Release v1.0.0
+
+- `feat(server): fastify static file serving` — Fastify menyajikan file build antarmuka React dari `web/dist` dengan *fallback routing* SPA (`index.html`) untuk seluruh navigasi non-API/non-hook, memungkinkan arsitektur monolitik tunggal tanpa container terpisah.
+- `docs: comprehensive system documentation` — Penulisan dokumen teknis lengkap [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), pembaruan [`README.md`](README.md) dengan panduan deploy gratis ke Render + Turso, pengujian sandbox dengan Stripe/cURL, diagram alur Mermaid, dan mitigasi cold-start.
+- `test: code coverage validation` — Pengukuran test coverage v8 dengan hasil **84.4% overall coverage** dan **>90% pada modul logika inti** (`auth`, `rateLimit`, `hmac`, `ssrf`, `sse`, `hook`, `requests`, `endpoints`). Total 109 unit dan integration test lulus 100%.
 
 ### Phase 9 — Replay dengan Proteksi SSRF
 
