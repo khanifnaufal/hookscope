@@ -151,7 +151,8 @@
   }
 
   /* Input */
-  .input {
+  .input,
+  .input-text {
     background-color: var(--surface-2);
     color: var(--text);
     border: 1px solid var(--border);
@@ -159,7 +160,8 @@
       transition-[border-color] duration-150
       placeholder:text-[var(--text-muted)];
   }
-  .input:focus-visible {
+  .input:focus-visible,
+  .input-text:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: -1px;
     border-color: var(--accent);

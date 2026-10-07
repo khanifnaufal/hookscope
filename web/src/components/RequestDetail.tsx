@@ -4,7 +4,18 @@
  * copy cURL, copy body, internal scrollable body, and strictly safe text rendering (no XSS).
  */
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Trash2, Terminal, Code2, ListFilter, ArrowLeft } from 'lucide-react';
+import {
+  Trash2,
+  Terminal,
+  Code2,
+  ListFilter,
+  ArrowLeft,
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  MinusCircle,
+  Info,
+} from 'lucide-react';
 import type { RequestItem } from '../lib/api';
 import { generateCurl, parseHeaders } from '../lib/curl';
 import { CopyButton } from './CopyButton';
@@ -18,12 +29,15 @@ interface RequestDetailProps {
   onBackToList?: () => void; // for mobile back navigation
 }
 
-type TabKey = 'headers' | 'body' | 'query';
+type TabKey = 'headers' | 'body' | 'query' | 'signature';
 
 interface TabDefinition {
   key: TabKey;
   label: string;
   count?: number;
+  badge?: string;
+  badgeColor?: string;
+  badgeBg?: string;
   icon: typeof Code2;
 }
 
@@ -99,6 +113,13 @@ export function RequestDetail({
     setHeaderFilter('');
   }, [request.id, bodyInfo.isEmpty, headerEntries.length]);
 
+  // Detected signature headers in incoming request
+  const detectedSignatures = useMemo(() => {
+    return headerEntries.filter(([k]) =>
+      /signature|hub-signature|stripe-signature|x-sig|webhook-signature/i.test(k),
+    );
+  }, [headerEntries]);
+
   // Tabs definition
   const tabs: TabDefinition[] = useMemo(
     () => [
@@ -120,14 +141,43 @@ export function RequestDetail({
         count: queryEntries.length > 0 ? queryEntries.length : undefined,
         icon: Terminal,
       },
+      {
+        key: 'signature',
+        label: 'Signature',
+        badge:
+          request.signature_valid === true
+            ? 'Valid'
+            : request.signature_valid === false
+              ? 'Invalid'
+              : undefined,
+        badgeColor:
+          request.signature_valid === true
+            ? 'var(--success)'
+            : request.signature_valid === false
+              ? 'var(--danger)'
+              : undefined,
+        badgeBg:
+          request.signature_valid === true
+            ? 'rgba(62, 207, 142, 0.15)'
+            : request.signature_valid === false
+              ? 'rgba(247, 90, 90, 0.15)'
+              : undefined,
+        icon: ShieldCheck,
+      },
     ],
-    [bodyInfo.isEmpty, request.size_bytes, headerEntries.length, queryEntries.length],
+    [
+      bodyInfo.isEmpty,
+      request.size_bytes,
+      headerEntries.length,
+      queryEntries.length,
+      request.signature_valid,
+    ],
   );
 
   // Keyboard navigation for ARIA tabs (ArrowLeft, ArrowRight, Home, End)
   const handleTabKeyDown = useCallback(
     (e: React.KeyboardEvent, currentKey: TabKey) => {
-      const tabKeys: TabKey[] = ['body', 'headers', 'query'];
+      const tabKeys: TabKey[] = ['body', 'headers', 'query', 'signature'];
       const currentIndex = tabKeys.indexOf(currentKey);
 
       let nextIndex = -1;
@@ -276,6 +326,17 @@ export function RequestDetail({
                     }}
                   >
                     {tab.key === 'body' ? formatBytes(tab.count) : tab.count}
+                  </span>
+                )}
+                {tab.badge !== undefined && (
+                  <span
+                    className="rounded-full px-1.5 py-0.2 font-mono text-[10px] font-semibold"
+                    style={{
+                      backgroundColor: tab.badgeBg ?? 'var(--surface-2)',
+                      color: tab.badgeColor ?? 'var(--text-muted)',
+                    }}
+                  >
+                    {tab.badge}
                   </span>
                 )}
                 {/* Active indicator bar */}
@@ -540,6 +601,138 @@ export function RequestDetail({
               </div>
             </div>
           )}
+        </div>
+
+        {/* TAB PANEL: SIGNATURE */}
+        <div
+          role="tabpanel"
+          id="panel-signature"
+          aria-labelledby="tab-signature"
+          tabIndex={0}
+          hidden={activeTab !== 'signature'}
+          className="flex h-full flex-col min-h-0 p-4 sm:p-6 overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        >
+          <div className="max-w-2xl space-y-6">
+            {/* Status Card (Always has icon + text, never color alone) */}
+            <div
+              className="rounded-xl border p-4 sm:p-5 flex items-start gap-3.5"
+              style={{
+                backgroundColor:
+                  request.signature_valid === true
+                    ? 'rgba(62, 207, 142, 0.08)'
+                    : request.signature_valid === false
+                      ? 'rgba(247, 90, 90, 0.08)'
+                      : 'var(--surface-2)',
+                borderColor:
+                  request.signature_valid === true
+                    ? 'rgba(62, 207, 142, 0.3)'
+                    : request.signature_valid === false
+                      ? 'rgba(247, 90, 90, 0.3)'
+                      : 'var(--border)',
+              }}
+            >
+              <div className="flex-shrink-0 mt-0.5">
+                {request.signature_valid === true ? (
+                  <CheckCircle2 size={20} style={{ color: 'var(--success)' }} aria-hidden="true" />
+                ) : request.signature_valid === false ? (
+                  <XCircle size={20} style={{ color: 'var(--danger)' }} aria-hidden="true" />
+                ) : (
+                  <MinusCircle size={20} style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3
+                  className="text-sm font-semibold tracking-tight"
+                  style={{
+                    color:
+                      request.signature_valid === true
+                        ? 'var(--success)'
+                        : request.signature_valid === false
+                          ? 'var(--danger)'
+                          : 'var(--text)',
+                  }}
+                >
+                  {request.signature_valid === true
+                    ? 'Signature Valid'
+                    : request.signature_valid === false
+                      ? 'Signature Tidak Valid'
+                      : 'Tidak Ada Signature'}
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                  {request.signature_valid === true
+                    ? 'Signature HMAC pada request ini cocok dengan secret dan algoritma yang dikonfigurasi.'
+                    : request.signature_valid === false
+                      ? 'Header signature terdeteksi, tetapi nilainya tidak cocok dengan hasil perhitungan hash payload body.'
+                      : 'Request ini tidak menyertakan header signature, atau endpoint belum mengaktifkan verifikasi HMAC.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Detected Signature Headers */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                Header Signature Terdeteksi
+              </h4>
+              {detectedSignatures.length === 0 ? (
+                <div
+                  className="rounded-lg border border-dashed p-4 text-center text-xs"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+                >
+                  Tidak ada header signature standar (misal: <code>X-Hub-Signature-256</code>, <code>X-Signature</code>) pada request ini.
+                </div>
+              ) : (
+                <div
+                  className="rounded-lg border overflow-hidden"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
+                >
+                  <table className="w-full border-collapse font-mono text-xs">
+                    <thead>
+                      <tr className="border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface-2)' }}>
+                        <th className="px-4 py-2 text-left font-medium text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                          Header
+                        </th>
+                        <th className="px-4 py-2 text-left font-medium text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                          Nilai
+                        </th>
+                        <th className="w-16 px-2 py-2" aria-label="Aksi"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                      {detectedSignatures.map(([key, val]) => (
+                        <tr key={key} className="hover:bg-[var(--surface-2)] transition-colors group">
+                          <td className="px-4 py-2 font-medium align-top whitespace-nowrap" style={{ color: 'var(--accent)' }}>
+                            {key}
+                          </td>
+                          <td className="px-4 py-2 align-top break-all" style={{ color: 'var(--text)' }}>
+                            {val}
+                          </td>
+                          <td className="px-2 py-2 align-top text-right">
+                            <CopyButton text={val} label="Salin" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Explanatory Info Card */}
+            <div
+              className="rounded-lg p-3.5 border flex items-start gap-2.5 text-xs leading-relaxed"
+              style={{ backgroundColor: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+            >
+              <Info size={16} className="flex-shrink-0 mt-0.5 text-[var(--accent)]" aria-hidden="true" />
+              <div>
+                <span className="font-medium" style={{ color: 'var(--text)' }}>
+                  Bagaimana verifikasi bekerja?
+                </span>
+                <p className="mt-0.5">
+                  Hookscope membandingkan hash HMAC dari raw request body dengan nilai header signature menggunakan perbandingan konstan waktu (<em>timingSafeEqual</em>) untuk mencegah kebocoran side-channel.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

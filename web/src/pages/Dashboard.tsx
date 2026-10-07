@@ -17,14 +17,17 @@ import {
   Search,
   X,
   Filter,
+  Settings,
 } from 'lucide-react';
 import {
   getEndpoint,
+  updateEndpoint,
   listRequests,
   deleteRequest,
   deleteAllRequests,
   type RequestItem,
   type EndpointInfo,
+  type UpdateEndpointInput,
 } from '../lib/api';
 import { connectSSE, type SSEStatus } from '../lib/sse';
 import { useTheme } from '../components/ThemeProvider';
@@ -33,6 +36,7 @@ import { LiveIndicator } from '../components/LiveIndicator';
 import { RequestRow } from '../components/RequestRow';
 import { RequestDetail } from '../components/RequestDetail';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { SettingsModal } from '../components/SettingsModal';
 import { formatCountdown } from '../lib/format';
 
 interface DashboardProps {
@@ -68,6 +72,7 @@ export default function Dashboard({
   const [filterMethod, setFilterMethod] = useState<string>('');
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Debounce search query
   useEffect(() => {
@@ -186,6 +191,14 @@ export default function Dashboard({
     }
   }, [endpointId]);
 
+  const handleSaveSettings = useCallback(
+    async (data: UpdateEndpointInput) => {
+      const updated = await updateEndpoint(endpointId, data);
+      setEndpoint(updated);
+    },
+    [endpointId],
+  );
+
   const selectedRequest = useMemo(
     () => requests.find((r) => r.id === selectedId) ?? null,
     [requests, selectedId],
@@ -249,8 +262,18 @@ export default function Dashboard({
 
         <button
           type="button"
-          onClick={toggle}
+          onClick={() => setShowSettingsModal(true)}
           className="btn-icon ml-1"
+          aria-label="Pengaturan endpoint"
+          title="Pengaturan endpoint"
+        >
+          <Settings size={15} aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          onClick={toggle}
+          className="btn-icon"
           aria-label={theme === 'dark' ? 'Aktifkan tema terang' : 'Aktifkan tema gelap'}
         >
           {theme === 'dark' ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
@@ -485,6 +508,16 @@ export default function Dashboard({
         onConfirm={handleConfirmDeleteAll}
         onCancel={() => setShowDeleteAllConfirm(false)}
       />
+
+      {/* Settings Modal */}
+      {endpoint && (
+        <SettingsModal
+          isOpen={showSettingsModal}
+          endpoint={endpoint}
+          onClose={() => setShowSettingsModal(false)}
+          onSave={handleSaveSettings}
+        />
+      )}
     </div>
   );
 }
