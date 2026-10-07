@@ -6,11 +6,14 @@ import { getClient } from '../db/client.js';
  * Returns the manage_token row on success, throws 401 otherwise.
  */
 export async function requireManageToken(
-  req: FastifyRequest<{ Params: { id: string }; Querystring?: { token?: string } }>,
+  req: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  const params = req.params as { id?: string } | undefined;
+  const endpointId = params?.id;
   const authHeader = req.headers.authorization ?? '';
-  const queryToken = (req.query as { token?: string } | undefined)?.token;
+  const query = req.query as { token?: string } | undefined;
+  const queryToken = query?.token;
   const token = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7)
     : (queryToken && queryToken.trim().length > 0 ? queryToken.trim() : null);
@@ -19,10 +22,14 @@ export async function requireManageToken(
     return reply.status(401).send({ error: 'Missing authorization token' });
   }
 
+  if (!endpointId) {
+    return reply.status(401).send({ error: 'Missing endpoint ID' });
+  }
+
   const db = getClient();
   const result = await db.execute({
     sql: 'SELECT id FROM endpoints WHERE id = ? AND manage_token = ?',
-    args: [req.params.id, token],
+    args: [endpointId, token],
   });
 
   if (result.rows.length === 0) {
