@@ -124,12 +124,19 @@ export async function validateTargetUrl(rawUrl: string): Promise<URL> {
     return url;
   }
 
-  // Resolve DNS and check every returned address
+  // Resolve DNS and check every returned address with a 2500ms timeout
   const addresses: string[] = [];
   try {
-    const v4 = await dns.resolve4(hostname).catch(() => [] as string[]);
-    const v6 = await dns.resolve6(hostname).catch(() => [] as string[]);
-    addresses.push(...v4, ...v6);
+    const dnsTimeout = new Promise<string[]>((_, reject) =>
+      setTimeout(() => reject(new Error('DNS lookup timeout')), 2500),
+    );
+    const lookup = Promise.all([
+      dns.resolve4(hostname).catch(() => [] as string[]),
+      dns.resolve6(hostname).catch(() => [] as string[]),
+    ]).then(([v4, v6]) => [...v4, ...v6]);
+
+    const resolved = await Promise.race([lookup, dnsTimeout]);
+    addresses.push(...resolved);
   } catch {
     throw new SsrfError(`Tidak dapat me-resolve hostname: ${hostname}`);
   }

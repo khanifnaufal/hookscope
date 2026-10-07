@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { buildApp } from '../src/app.js';
+import { migrate, closeClient } from '../src/db/client.js';
 import { isBlockedIp, validateTargetUrl, SsrfError } from '../src/services/ssrf.js';
 import { createLimiter, hookLimiter } from '../src/services/rateLimit.js';
+
+process.env.DATABASE_URL = ':memory:';
+process.env.NODE_ENV = 'test';
 
 describe('SSRF Protection Service', () => {
   describe('isBlockedIp()', () => {
@@ -72,9 +76,13 @@ describe('SSRF Protection Service', () => {
     });
 
     it('accepts valid public HTTP/HTTPS URLs', async () => {
-      const url = await validateTargetUrl('https://example.com/webhook');
-      expect(url.hostname).toBe('example.com');
-      expect(url.protocol).toBe('https:');
+      const url = await validateTargetUrl('http://93.184.216.34/webhook');
+      expect(url.hostname).toBe('93.184.216.34');
+      expect(url.protocol).toBe('http:');
+
+      const httpsUrl = await validateTargetUrl('https://1.1.1.1/api');
+      expect(httpsUrl.hostname).toBe('1.1.1.1');
+      expect(httpsUrl.protocol).toBe('https:');
     });
   });
 });
@@ -82,11 +90,20 @@ describe('SSRF Protection Service', () => {
 describe('Replay API Route', () => {
   let app: ReturnType<typeof buildApp>;
 
+  beforeAll(async () => {
+    await migrate();
+    app = buildApp();
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+    closeClient();
+  });
+
   beforeEach(() => {
-    process.env.NODE_ENV = 'test';
     createLimiter.clear();
     hookLimiter.clear();
-    app = buildApp();
   });
 
   it('requires Bearer token authentication', async () => {
