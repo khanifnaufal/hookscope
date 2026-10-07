@@ -193,14 +193,12 @@ describe('Hook rate limit (429)', () => {
 // ────────────────────────────────────────────────
 describe('Edge cases', () => {
   let endpointId: string;
-  let token: string;
 
   beforeAll(async () => {
     hookLimiter.clear();
     const res = await app.inject({ method: 'POST', url: '/api/endpoints' });
     const data = res.json<{ id: string; manage_token: string }>();
     endpointId = data.id;
-    token = data.manage_token;
   });
 
   it('handles empty body (GET request with no body)', async () => {
