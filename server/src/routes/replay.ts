@@ -78,6 +78,19 @@ export async function replayRoutes(app: FastifyInstance): Promise<void> {
 
       const { target_url: rawTargetUrl } = parseResult.data;
 
+      // Fetch the original captured request from DB first
+      const db = getClient();
+      const result = await db.execute({
+        sql: `SELECT method, path, headers, body, content_type
+              FROM requests
+              WHERE endpoint_id = ? AND id = ?`,
+        args: [endpointId, requestId],
+      });
+
+      if (result.rows.length === 0) {
+        return reply.status(404).send({ error: 'Request not found' });
+      }
+
       // Validate target URL against SSRF blocklist
       let targetUrl: URL;
       try {
@@ -90,19 +103,6 @@ export async function replayRoutes(app: FastifyInstance): Promise<void> {
           });
         }
         throw err;
-      }
-
-      // Fetch the original captured request from DB
-      const db = getClient();
-      const result = await db.execute({
-        sql: `SELECT method, path, headers, body, content_type
-              FROM requests
-              WHERE endpoint_id = ? AND id = ?`,
-        args: [endpointId, requestId],
-      });
-
-      if (result.rows.length === 0) {
-        return reply.status(404).send({ error: 'Request not found' });
       }
 
       const captured = result.rows[0];

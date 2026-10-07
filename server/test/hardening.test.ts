@@ -26,6 +26,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  hookLimiter.clear();
+  createLimiter.clear();
   await app.close();
   closeClient();
 });

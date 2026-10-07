@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { isBlockedIp, validateTargetUrl, SsrfError } from '../src/services/ssrf.js';
+import { createLimiter, hookLimiter } from '../src/services/rateLimit.js';
 
 describe('SSRF Protection Service', () => {
   describe('isBlockedIp()', () => {
@@ -83,6 +84,8 @@ describe('Replay API Route', () => {
 
   beforeEach(() => {
     process.env.NODE_ENV = 'test';
+    createLimiter.clear();
+    hookLimiter.clear();
     app = buildApp();
   });
 
